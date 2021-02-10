@@ -6,7 +6,9 @@
 #include <map>
 
 #define reclass(a_class,a_val) (*(a_class*)&(a_val))
-typedef const char* cstring;
+typedef const char*    cstring;
+typedef unsigned int   uint;
+typedef unsigned short ushort;
 //#define unsigned int unsigned int
 //#define ushort unsigned short
 

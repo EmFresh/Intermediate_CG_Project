@@ -82,7 +82,7 @@ public:
 
 	static void setShader(Shader* shad);
 
-	static std::vector<FrameBuffer*> shadowBuffers(unsigned w, unsigned h, std::map<void*, Model*>&, unsigned index);
+	static std::vector<FrameBuffer*> shadowBuffers(unsigned w, unsigned h, std::unordered_map<void*, Model*>&, unsigned index);
 
 	static void setFramebuffer(FrameBuffer* buff);
 

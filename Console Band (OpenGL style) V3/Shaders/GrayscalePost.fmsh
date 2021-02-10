@@ -29,7 +29,7 @@ void main()
 		source.rgb = texture(customTexure, outColour.rgb * scale + offset).rgb;
 	}
 
-	outColour = source;
+//	outColour = source;
+	outColour = vec4(mix(source.rgb, vec3(luminance, luminance, luminance),uLerp), 1);
 	outColour.a=1;
-	//outColour = vec4(mix(source.rgb, vec3(luminance, luminance, luminance),uLerp), 1);
 }

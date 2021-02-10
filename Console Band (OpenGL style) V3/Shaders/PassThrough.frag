@@ -29,8 +29,10 @@ uniform vec3 LightDirection;
 uniform float LightAngleConstraint;
 
 // uniform sampler2D uTex;
-uniform sampler2D uPos;
-uniform sampler2D uNorm;
+uniform sampler2D uPosOP;
+uniform sampler2D uPosTrans;
+uniform sampler2D uNormOP;
+uniform sampler2D uNormTrans;
 uniform sampler2D uScene;
 uniform sampler2D uRamp;
 uniform vec4 uViewPos;
@@ -54,10 +56,10 @@ void spotLight()
 
 }
 
-vec3 blinnPhong(vec3 lightDir, vec3 viewDir )
+vec3 blinnPhong(vec3 lightDir, vec3 viewDir, vec3 pos, vec3 norm )
 {
-  vec3 norm    = (texture(uNorm, texcoord)).rgb;
-  vec3 pos     = (texture(uPos,  texcoord)).rgb;//frag position  
+  //vec3 pos   = (texture(uPosOP,  texcoord)).rgb;//frag position  
+  //vec3 norm    = (texture(uNormOP, texcoord)).rgb;
   vec3 halfDir = normalize(lightDir + viewDir);
   vec3 diffuse, specular;
 
@@ -78,26 +80,36 @@ vec3 blinnPhong(vec3 lightDir, vec3 viewDir )
 vec3 calculatePointLight(){
 
   //variables  
-  vec3 pos  = (texture(uPos, texcoord)).rgb;//frag position
-  vec3 lightDir   = normalize(LightPosition.xyz - pos);
-  vec3 viewDir    = uViewPos.xyz - pos;   
+  vec3 posOP     = (texture(uPosOP    , texcoord)).rgb;//frag position
+  vec3 posTrans  = (texture(uPosTrans , texcoord)).rgb;//frag position
+  vec3 normOP    = (texture(uNormOP   , texcoord)).rgb;
+  vec3 normTrans = (texture(uNormTrans, texcoord)).rgb;
+  vec3 lightDirOP  = normalize(LightPosition.xyz - posOP);
+  vec3 lightDirTrans = normalize(LightPosition.xyz - posTrans);
+  vec3 viewDirOP   = uViewPos.xyz - posOP;   
+  vec3 viewDirTrans   = uViewPos.xyz - posTrans;   
   
   //Atenuation calculation
-  float dist= length(LightPosition.xyz - pos);
-  float attenuation = ( 1.0 / (Attenuation_Constant + Attenuation_Linear * dist + Attenuation_Quadratic * (dist * dist)));
+  float distOP= length(LightPosition.xyz - posOP);
+  float distTrans= length(LightPosition.xyz - posTrans);
+  float attenuationOP = ( 1.0 / (Attenuation_Constant + Attenuation_Linear * distOP + Attenuation_Quadratic * (distOP * distOP)));
+  float attenuationTrans = ( 1.0 / (Attenuation_Constant + Attenuation_Linear * distTrans + Attenuation_Quadratic * (distTrans * distTrans)));
   
   //return 
-  return blinnPhong(lightDir, viewDir) * attenuation;
+  return
+  blinnPhong(lightDirOP, viewDirOP, posOP, normOP) * attenuationOP +  
+  blinnPhong(lightDirTrans, viewDirTrans, posTrans, normTrans) * attenuationTrans;
 
 }
 
 void pointLight() {   
  outColor.rgb += calculatePointLight();
+ //outColor =(texture(uScene, texcoord));
  }
 
 vec3 calculateDirectionalLight() {
-  vec3 norm = (texture(uNorm, texcoord)).rgb;
-  vec3 pos  = (texture(uPos, texcoord)).rgb;
+  vec3 norm = (texture(uNormOP, texcoord)).rgb;
+  vec3 pos  = (texture(uPosOP, texcoord)).rgb;
   
   
  // float diff = max(dot(norm, lightDir), 0.0);
@@ -154,7 +166,7 @@ void main() {
     }
 
 
-  //outColor = normalize(texture(uPos,texcoord));
-  //outColor.rgb = abs(texture(uNorm,texcoord).rgb);
+  //outColor = normalize(texture(uPosOP,texcoord));
+  //outColor.rgb = abs(texture(uNormOP,texcoord).rgb);
   outColor.a = 1;
 }

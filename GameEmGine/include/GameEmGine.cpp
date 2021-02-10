@@ -22,7 +22,7 @@ WindowCreator* m_window;	//must be init in the constructor
 ColourRGBA m_colour{123,123,123};
 
 std::unordered_map<std::string, FrameBuffer*> m_frameBuffers;
-std::map<void*, Model*> m_models;
+std::unordered_map<void*, Model*> m_models;
 
 bool exitGame = false;
 float m_fps;
@@ -67,7 +67,7 @@ void GameEmGine::init(std::string name, int width, int height, int x, int y, int
 	InputManager::init();
 
 	tmpRamp = ResourceManager::getTexture2D("textures/Texture Ramp.png");
-	
+
 
 
 	//LUTpath = "Texture/IWLTBAP_Aspen_-_Standard.cube";
@@ -115,15 +115,17 @@ void GameEmGine::createNewWindow(std::string name, int width, int height, int x,
 
 	printf("created the window\n");
 
-	m_gBuffer = new FrameBuffer(3, "Main Buffer");
+	m_gBuffer = new FrameBuffer(5, "Main Buffer");
 	m_shadowBuffer = new FrameBuffer(1, "Shadow Buffer");
 	m_postBuffer = new FrameBuffer(1, "Post Process Buffer");
-	
+
 
 	m_gBuffer->initDepthTexture(getWindowWidth(), getWindowHeight());
 	m_gBuffer->initColourTexture(0, getWindowWidth(), getWindowHeight(), GL_RGB16F, GL_NEAREST, GL_CLAMP_TO_EDGE);
 	m_gBuffer->initColourTexture(1, getWindowWidth(), getWindowHeight(), GL_RGB16F, GL_NEAREST, GL_CLAMP_TO_EDGE);
-	m_gBuffer->initColourTexture(2, getWindowWidth(), getWindowHeight(), GL_RGB8, GL_NEAREST, GL_CLAMP_TO_EDGE);
+	m_gBuffer->initColourTexture(2, getWindowWidth(), getWindowHeight(), GL_RGB16F, GL_NEAREST, GL_CLAMP_TO_EDGE);
+	m_gBuffer->initColourTexture(3, getWindowWidth(), getWindowHeight(), GL_RGB16F, GL_NEAREST, GL_CLAMP_TO_EDGE);
+	m_gBuffer->initColourTexture(4, getWindowWidth(), getWindowHeight(), GL_RGB8, GL_NEAREST, GL_CLAMP_TO_EDGE);
 	if(!m_gBuffer->checkFBO())
 	{
 		puts("FBO failed Creation");
@@ -131,8 +133,8 @@ void GameEmGine::createNewWindow(std::string name, int width, int height, int x,
 		return;
 	}
 
-	m_shadowBuffer->initColourTexture(0, getWindowWidth(), getWindowHeight(), GL_RGB8, GL_NEAREST, GL_CLAMP_TO_EDGE);
 	m_shadowBuffer->initDepthTexture(getWindowWidth(), getWindowHeight());
+	m_shadowBuffer->initColourTexture(0, getWindowWidth(), getWindowHeight(), GL_RGB8, GL_NEAREST, GL_CLAMP_TO_EDGE);
 	if(!m_shadowBuffer->checkFBO())
 	{
 		puts("FBO failed Creation");
@@ -140,7 +142,7 @@ void GameEmGine::createNewWindow(std::string name, int width, int height, int x,
 		return;
 	}
 
-	
+
 	m_postBuffer->initDepthTexture(getWindowWidth(), getWindowHeight());
 	m_postBuffer->initColourTexture(0, getWindowWidth(), getWindowHeight(), GL_RGBA8, GL_NEAREST, GL_CLAMP_TO_EDGE);
 	if(!m_postBuffer->checkFBO())
@@ -150,7 +152,7 @@ void GameEmGine::createNewWindow(std::string name, int width, int height, int x,
 		return;
 	}
 
-	
+
 
 	//// During init, enable debug output
 	//glEnable(GL_DEBUG_OUTPUT);
@@ -200,7 +202,7 @@ void GameEmGine::run()
 			fps.translate(0, 0, .2f);
 			fps.rotate(180, 0, 0);
 
-			static std::map<void*, Model*> tmp;
+			static std::unordered_map<void*, Model*> tmp;
 
 			tmp[&fps] = (Model*)&fps;
 			//glClearDepth(1.f);
@@ -272,7 +274,7 @@ void GameEmGine::shaderInit()
 	m_postProcess = ResourceManager::getShader("Shaders/Main Buffer.vtsh", "Shaders/PassThrough.frag");
 	m_forwardRender = ResourceManager::getShader("Shaders/DeferredRender.vtsh", "Shaders/ForwardRender.fmsh");
 
-	
+
 	Shader::enableUniformErrors(false);
 }
 
@@ -332,7 +334,7 @@ void GameEmGine::setScene(Scene* scene)
 	InputManager::mouseButtonReleasedCallback(scene->mouseReleased);
 	InputManager::mouseButtonAllCallback(scene->mouseInput);
 
-	customRenderCallback([&](FrameBuffer* gbuff, FrameBuffer* post)->void{m_mainScene->customPostEffect(gbuff, post);  });
+	customRenderCallback([&](FrameBuffer* gbuff, FrameBuffer* post)->void{if(m_mainScene->customPostEffect)m_mainScene->customPostEffect(gbuff, post);  });
 
 	//m_render = scene->render;
 	m_gameLoop = [&](double a)->void {m_mainScene->update(a); };
@@ -495,59 +497,67 @@ void GameEmGine::update()
 	m_gBuffer->disable();
 
 
-	//store data for post process
-	m_postBuffer->enable();
-	m_postProcess->enable();
-
-
-
-	//bind textures
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, m_gBuffer->getColorHandle(0));
-	glActiveTexture(GL_TEXTURE1);
-	glBindTexture(GL_TEXTURE_2D, m_gBuffer->getColorHandle(1));
-	glActiveTexture(GL_TEXTURE2);
-	glBindTexture(GL_TEXTURE_2D, m_gBuffer->getColorHandle(2));
-	glActiveTexture(GL_TEXTURE3);
-	glBindTexture(GL_TEXTURE_2D, tmpRamp.id);
-
-	m_postProcess->sendUniform("uPos", 0);
-	m_postProcess->sendUniform("uNorm", 1);
-	m_postProcess->sendUniform("uScene", 2);
-	m_postProcess->sendUniform("uRamp", 3);
-	
-	FrameBuffer::drawFullScreenQuad();
-	//Apply lighting
-	LightManager::setShader(m_postProcess);
-	LightManager::setFramebuffer(m_postBuffer);
-	LightManager::update();
-
-	
-	//un-bind textures
-	glActiveTexture(GL_TEXTURE3);
-	glBindTexture(GL_TEXTURE_2D, GL_NONE);
-	glActiveTexture(GL_TEXTURE2);
-	glBindTexture(GL_TEXTURE_2D, GL_NONE);
-	glActiveTexture(GL_TEXTURE1);
-	glBindTexture(GL_TEXTURE_2D, GL_NONE);
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, GL_NONE);
-
-	m_postProcess->disable();
-	m_postBuffer->disable();
-
-
-
 	m_gBuffer->moveDepthToBuffer(getWindowWidth(), getWindowHeight(), m_postBuffer->getFrameBufferID());
-	m_postBuffer->enable();
 
 	//sky box
+	m_gBuffer->enable();
 	if(m_mainScene->skyBoxEnabled)
 		(*(SkyBox*)&m_mainScene->getSkyBox()).render();
+	m_gBuffer->disable();
+	
 
-	m_mainCamera->render(m_forwardRender, m_models, true);
-	m_postBuffer->disable();
+	//m_postBuffer->moveColourToBuffer(getWindowWidth(), getWindowHeight(), m_gBuffer, 0, 4);
 
+	m_gBuffer->enable();
+	m_mainCamera->render(m_modelShader, m_models, true);
+	m_gBuffer->disable();
+	
+
+	{
+
+		//store data for post process
+		m_postBuffer->enable();
+		m_postProcess->enable();
+
+		//bind textures
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, m_gBuffer->getColorHandle(0));
+		glActiveTexture(GL_TEXTURE1);
+		glBindTexture(GL_TEXTURE_2D, m_gBuffer->getColorHandle(1));
+		glActiveTexture(GL_TEXTURE2);
+		glBindTexture(GL_TEXTURE_2D, m_gBuffer->getColorHandle(2));
+		glActiveTexture(GL_TEXTURE3);
+		glBindTexture(GL_TEXTURE_2D, m_gBuffer->getColorHandle(3));
+		glActiveTexture(GL_TEXTURE4);
+		glBindTexture(GL_TEXTURE_2D, m_gBuffer->getColorHandle(4));
+		glActiveTexture(GL_TEXTURE5);
+		glBindTexture(GL_TEXTURE_2D, tmpRamp.id);
+
+		m_postProcess->sendUniform("uPosOP", 0);
+		m_postProcess->sendUniform("uPosTrans", 1);
+		m_postProcess->sendUniform("uNormOP", 2);
+		m_postProcess->sendUniform("uNormTrans", 3);
+		m_postProcess->sendUniform("uScene", 4);
+		m_postProcess->sendUniform("uRamp", 5);
+
+		//FrameBuffer::drawFullScreenQuad();
+
+		//Apply lighting
+		LightManager::setShader(m_postProcess);
+		LightManager::setFramebuffer(m_postBuffer);
+		LightManager::update();
+
+		//un-bind textures
+		for(int a = 0; a < 5; ++a)
+			glActiveTexture(GL_TEXTURE0 + a),
+			glBindTexture(GL_TEXTURE_2D, GL_NONE);
+
+		m_postProcess->disable();
+		m_postBuffer->disable();
+
+	}
+
+	//post effects
 	if(m_customRender)
 		m_customRender(m_gBuffer, m_postBuffer);
 
@@ -565,6 +575,7 @@ void GameEmGine::update()
 
 void GameEmGine::changeViewport(GLFWwindow*, int w, int h)
 {
+
 	m_screenSize = {w,h};
 	glViewport(0, 0, w, h);
 

@@ -50,9 +50,9 @@ void LightManager::setShader(Shader* shad)
 	m_shader = shad;
 }
 
-std::vector<FrameBuffer*> LightManager::shadowBuffers(unsigned w, unsigned h, std::map<void*, Model*>& models, unsigned index)
+std::vector<FrameBuffer*> LightManager::shadowBuffers(unsigned w, unsigned h, std::unordered_map<void*, Model*>& models, unsigned index)
 {
-	models;
+	
 	if(m_lights[index]->type == Light::TYPE::POINT)
 	{
 
@@ -131,8 +131,8 @@ void LightManager::update()
 	if(m_framebuffer)
 	{
 		m_framebuffer->enable();
-		glActiveTexture(GL_TEXTURE2);
-		glBindTexture(GL_TEXTURE_2D, m_framebuffer->getColorHandle(0));
+		//glActiveTexture(GL_TEXTURE2);
+		//glBindTexture(GL_TEXTURE_2D, m_framebuffer->getColorHandle(0));
 	}
 	m_shader->enable();
 

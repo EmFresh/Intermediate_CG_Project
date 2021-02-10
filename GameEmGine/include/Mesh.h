@@ -170,6 +170,7 @@ struct PrimitivePlane:public primitiveMesh
 
 		//normal
 		Coord3D<> norm = Coord3D<>::crossProduct(tmp[0].coord - tmp[1].coord, tmp[0].coord - tmp[2].coord).normal();
+		norm.z *= -1;
 
 		tmp[0].norm = norm;
 		tmp[1].norm = norm;

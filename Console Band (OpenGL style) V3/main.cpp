@@ -93,8 +93,12 @@ public:
 
 
 
-		customPostEffect = [&](FrameBuffer* gbuff, FrameBuffer* postBuff)->void
+		customPostEffect =
+			[&](FrameBuffer* gbuff, FrameBuffer* postBuff)->void
 		{
+			m_greyscaleBuffer->clear();
+			m_buffer1->clear();
+			m_buffer2->clear();
 
 			glViewport(0, 0, Game::getWindowWidth() / SCREEN_RATIO, Game::getWindowHeight() / SCREEN_RATIO);
 
@@ -222,8 +226,12 @@ public:
 		bigBoss[1].rotate(0, -90, 0);
 
 		//floor 
-		static Model floor;
+		static Model floor, transCube;
 		floor.create(new PrimitivePlane({100,0,100}), "floor");
+		transCube.create(new primitiveCube({20,20,20}), "floor");
+		transCube.setTransparent(true);
+		transCube.setColour(.2, .6, .05, .2);
+		Game::addModel(&transCube);
 		puts("is it 4?");
 
 		Game::addModel(&floor);
@@ -296,7 +304,7 @@ public:
 				lit.rampActiveDiff = !lit.rampActiveDiff;
 				break;
 			case GLFW_KEY_7:
-				lit.rampActiveSpec= !lit.rampActiveSpec;
+				lit.rampActiveSpec = !lit.rampActiveSpec;
 				break;
 			case GLFW_KEY_8:
 				if(lutPath == "textures/hot.cube")
@@ -497,14 +505,15 @@ public:
 		cameraMovement();
 		float speed = 5;
 		ani.setAnimationSpeed((float)speed / ani.getTotalFrames());
-		bigBoss[0].translate(lerp(Coord3D<>{-60, 0, 0}, Coord3D<>{-15, 0, 0}, fmodf(clock() / (float)CLOCKS_PER_SEC + 1, speed) / speed));
+		ani.stop();
+		bigBoss[0].translate(lerp(Coord3D<>{-60, 0, 0}, Coord3D<>{-15, 0, 0}, .6f));
 		bigBoss[1].translate(lerp(Coord3D<>{60, 0, 0}, Coord3D<>{15, 0, 0}, fmodf(clock() / (float)CLOCKS_PER_SEC + 1, speed) / speed));
 	}
 };
 
 int main()
 {
-	Game::init("Assignment 1", 900, 500);
+	Game::init("Assignment 1", 1920, 1080);
 
 	Test test;
 	//Song song;

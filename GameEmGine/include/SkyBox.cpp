@@ -52,6 +52,7 @@ void SkyBox::render()
 	//glDisable(GL_DEPTH_TEST);
 	shader->enable();
 
+	shader->sendUniform("uOutLoc", 4);
 	shader->sendUniform("uView", inverse(m_camera->getLocalRotationMatrix()));
 	shader->sendUniform("uProj", m_camera->getProjectionMatrix());
 
@@ -69,6 +70,8 @@ void SkyBox::render()
 		GL_UNSIGNED_INT,//data type
 		(void*)0 //indice offset 
 	);
+
+	glActiveTexture(GL_TEXTURE0);
 	m_sky->unbindTexture();
 
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);

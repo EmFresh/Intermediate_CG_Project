@@ -46,8 +46,10 @@ int WindowCreator::createWindow(std::string name, Coord2D<int> size, Coord2D<int
 	m_info->position = position;
 
 
-	m_window = glfwCreateWindow(m_info->size.width, m_info->size.height, (m_info->title = name).c_str(), nullptr, nullptr);
+	m_window = glfwCreateWindow(mode->width, mode->height, (m_info->title = name).c_str(), nullptr, nullptr);
 	
+	glfwSetWindowSize(m_window, m_info->size.width, m_info->size.height);
+
 	glfwMakeContextCurrent(m_window); //gives opengl the window it renders to
 
 	setFullScreen(fullScreeen);

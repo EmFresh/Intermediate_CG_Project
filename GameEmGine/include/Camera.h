@@ -69,7 +69,7 @@ public:
 	virtual glm::mat4 getWorldTransformation();
 
 	//render objects
-	void render(Shader* shader, std::map<void*, Model*>& models, bool transparent = false);
+	void render(Shader* shader, std::unordered_map<void*, Model*>& models, bool transparent = false);
 
 
 	bool isUpdated() { return m_cameraUpdate; }

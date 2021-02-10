@@ -240,10 +240,27 @@ glm::mat4 Camera::getWorldTransformation()
 	return glm::inverse(Transformer::getWorldTransformation());
 }
 
-void Camera::render(Shader* shader, std::map<void*, Model*>& models, bool trans)
+
+#include <algorithm>
+void Camera::render(Shader* shader, std::unordered_map<void*, Model*>& models, bool trans)
 {
+
+	std::vector<std::pair<void*, Model*>> models2(models.begin(), models.end());
+	Camera* tmpCam = this;
+	std::sort(models2.begin(), models2.end(),
+			  [tmpCam](std::pair<void*, Model*>a, std::pair<void*, Model*>b)->bool
+	{
+		return
+			(b.second->getPosition() - tmpCam->getPosition()).distanceSquare() <
+			(a.second->getPosition() - tmpCam->getPosition()).distanceSquare();
+	});
+
+	shader->enable();
+	shader->sendUniform("isTrans", trans);
+	shader->disable();
+
 	Shader* shader2 = ResourceManager::getShader("shaders/freetype.vtsh", "shaders/freetype.fmsh");
-	for(auto& a : models)
+	for(auto& a : models2)
 		if(a.second->getCompType() == "TEXT")
 		{
 			Text* tmp = reclass(Text*, a.second);
