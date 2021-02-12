@@ -12,9 +12,10 @@ class Test: public Scene
 
 #pragma region Variables
 
-	float speed = 0.1f, angle = 1;
+	float speed = 0.1f, angle = 1, bloomThresh=0.15;
 	Animation ani;
 
+	Model models[10];
 	Model bigBoss[2];
 	Model rocket;
 
@@ -110,7 +111,7 @@ public:
 			glBindTexture(GL_TEXTURE_2D, postBuff->getColorHandle(0));
 
 			m_bloomHighPass->sendUniform("uTex", 0);
-			m_bloomHighPass->sendUniform("uThresh", 0.15f);
+			m_bloomHighPass->sendUniform("uThresh", bloomThresh);
 
 			FrameBuffer::drawFullScreenQuad();
 
@@ -253,7 +254,7 @@ public:
 		Game::addModel(&bigBoss[0]);
 		Game::addModel(&bigBoss[1]);
 
-
+		bigBoss[0].enableTexture(true);
 		//Game::addText(&testText);
 
 		Game::getMainCamera()->enableFPSMode();
@@ -513,10 +514,10 @@ public:
 
 int main()
 {
-	Game::init("Assignment 1", 1920, 1080);
+	Game::init("Assignment 1", 1900, 1060);
 
 	Test test;
-	//Song song;
+	//Song song;//just another scene... move along
 	Game::setScene(&test);
 	Game::run();
 

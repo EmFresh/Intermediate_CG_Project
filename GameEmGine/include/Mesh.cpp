@@ -52,28 +52,28 @@ bool Mesh::loadPrimitive(primitiveMesh* mesh)
 	return true;
 }
 
-void Mesh::render(Shader& shader)
+void Mesh::render(Shader& shader, bool enableTex)
 {
 	shader.enable();
 
 	bool textured = false;
 
-
 	int c = 0, e = 0;
-	meshName; m_textures;
-	for(auto& d : m_textures)
-	{
-		glActiveTexture(GL_TEXTURE0 + e);
-		if(d.type == TEXTURE_TYPE2D::DIFFUSE)
-			if(d.id || m_replaceTex[c])
-			{
-				textured = true;
-				glBindTexture(GL_TEXTURE_2D, m_replaceTex[c] ? m_replaceTex[c] : d.id);
-				shader.sendUniform("uTex", e++);
 
-			}
-		c++;
-	}
+	if(enableTex)
+		for(auto& d : m_textures)
+		{
+			glActiveTexture(GL_TEXTURE0 + e);
+			if(d.type == TEXTURE_TYPE2D::DIFFUSE)
+				if(d.id || m_replaceTex[c])
+				{
+					textured = true;
+					glBindTexture(GL_TEXTURE_2D, m_replaceTex[c] ? m_replaceTex[c] : d.id);
+					shader.sendUniform("uTex", e++);
+
+				}
+			++c;
+		}
 
 
 	glUniform1i(shader.getUniformLocation("textured"), textured);

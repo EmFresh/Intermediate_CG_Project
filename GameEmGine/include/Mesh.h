@@ -131,7 +131,7 @@ struct PrimitivePlane:public primitiveMesh
 
 		//coords
 		std::vector<Vertex3D> tmp;
-		glm::vec4 holder;
+		glm::vec4 holder{};
 		//bottom left tri
 		tmp.push_back({getPosition() + reclass(Coord3D<>,holder = getLocalRotationMatrix() *
 			glm::vec4((Coord3D<>{-halfW,-halfH, halfD}).toVec3(), 1)
@@ -421,7 +421,7 @@ public:
 
 	void editVerts(Mesh* verts1, Mesh* verts2);
 
-	void render(Shader& shader);
+	void render(Shader& shader,bool enableTex);
 
 	void unload();
 

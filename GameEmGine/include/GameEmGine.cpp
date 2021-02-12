@@ -9,7 +9,7 @@ std::function<void(double)>m_gameLoop;
 Camera* m_mainCamera;
 std::vector<Camera*>m_cameras;
 Shader
-* GameEmGine::m_modelShader, * GameEmGine::m_postProcess,
+* GameEmGine::m_gBufferShader, * GameEmGine::m_postProcess,
 * GameEmGine::m_forwardRender, * GameEmGine::m_shadows;
 
 FrameBuffer
@@ -267,9 +267,7 @@ WindowCreator* GameEmGine::getWindow()
 
 void GameEmGine::shaderInit()
 {
-	//m_cameraShader = new GLSLCompiler;
-	//m_cameraShader->create("Shaders/Texture.vtsh", "Shaders/Texture.fmsh");
-	m_modelShader = ResourceManager::getShader("Shaders/DeferredRender.vtsh", "Shaders/DeferredRender.fmsh");
+	m_gBufferShader = ResourceManager::getShader("Shaders/DeferredRender.vtsh", "Shaders/DeferredRender.fmsh");
 
 	m_postProcess = ResourceManager::getShader("Shaders/Main Buffer.vtsh", "Shaders/PassThrough.frag");
 	m_forwardRender = ResourceManager::getShader("Shaders/DeferredRender.vtsh", "Shaders/ForwardRender.fmsh");
@@ -281,8 +279,8 @@ void GameEmGine::shaderInit()
 void GameEmGine::calculateFPS()
 {
 	static const int SAMPLE = 15;
-	static short count;
-	static float frameTimes[SAMPLE];
+	static short count=0;
+	static float frameTimes[SAMPLE]{};
 
 	frameTimes[count++] = 1 / float(glfwGetTime());
 	if(count == SAMPLE)
@@ -300,7 +298,7 @@ void GameEmGine::calculateFPS()
 void GameEmGine::fpsLimiter()
 {
 	static bool enter = false;
-	static clock_t frameStart;
+	static clock_t frameStart=0;
 
 
 	//way 1: 
@@ -475,10 +473,10 @@ void GameEmGine::update()
 
 	m_mainCamera->update();
 
-	m_modelShader->enable();
-	glUniformMatrix4fv(m_modelShader->getUniformLocation("uView"), 1, GL_FALSE, &(m_mainCamera->getViewMatrix()[0][0]));
-	glUniformMatrix4fv(m_modelShader->getUniformLocation("uProj"), 1, GL_FALSE, &(m_mainCamera->getProjectionMatrix()[0][0]));
-	m_modelShader->disable();
+	m_gBufferShader->enable();
+	glUniformMatrix4fv(m_gBufferShader->getUniformLocation("uView"), 1, GL_FALSE, &(m_mainCamera->getViewMatrix()[0][0]));
+	glUniformMatrix4fv(m_gBufferShader->getUniformLocation("uProj"), 1, GL_FALSE, &(m_mainCamera->getProjectionMatrix()[0][0]));
+	m_gBufferShader->disable();
 
 	m_forwardRender->enable();
 	glUniformMatrix4fv(m_forwardRender->getUniformLocation("uView"), 1, GL_FALSE, &(m_mainCamera->getViewMatrix()[0][0]));
@@ -493,7 +491,7 @@ void GameEmGine::update()
 	glViewport(0, 0, getWindowWidth(), getWindowHeight());
 
 	m_gBuffer->enable();
-	m_mainCamera->render(m_modelShader, m_models, false);
+	m_mainCamera->render(m_gBufferShader, m_models, false);
 	m_gBuffer->disable();
 
 
@@ -509,7 +507,7 @@ void GameEmGine::update()
 	//m_postBuffer->moveColourToBuffer(getWindowWidth(), getWindowHeight(), m_gBuffer, 0, 4);
 
 	m_gBuffer->enable();
-	m_mainCamera->render(m_modelShader, m_models, true);
+	m_mainCamera->render(m_gBufferShader, m_models, true);
 	m_gBuffer->disable();
 	
 

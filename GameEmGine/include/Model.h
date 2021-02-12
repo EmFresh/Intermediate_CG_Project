@@ -64,7 +64,7 @@ public:
 
 	void editVerts(Model* first, Model* second);
 
-	
+
 	float getWidth();
 	float getHeight();
 	float getDepth();
@@ -83,6 +83,8 @@ public:
 
 	void replaceTexture(int mesh, int index, GLuint tex);
 
+	void enableTexture(bool enable);
+	bool isTextureEnabled();
 	void setToRender(bool render);
 	void setTransparent(bool trans);
 	void setWireframe(bool wire);
@@ -98,9 +100,10 @@ private:
 	void boundingBoxUpdate();
 	void drawBoundingBox();
 
+	bool m_useTex = true;
 	bool m_render = true;
 	bool m_transparent = false;
-	bool m_wireframe=false;
+	bool m_wireframe = false;
 	cstring m_tag;
 
 	std::unordered_map< std::string, Animation*>m_animations;

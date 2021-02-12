@@ -275,7 +275,7 @@ void Model::render(Shader& shader, Camera* cam)
 			glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 		//render the meshes
 		for(auto& a : m_meshes)
-			a->render(shader);
+			a->render(shader, m_useTex);
 
 		if(m_enableBB)
 			drawBoundingBox();
@@ -485,9 +485,19 @@ Shader* Model::getShader()
 	return m_shader;
 }
 
-void Model::replaceTexture(int mesh, int index, GLuint tex)
+void Model::replaceTexture(int mesh, int index, GLuint texID)
 {
-	m_meshes[mesh]->replaceTexture(index, tex);
+	m_meshes[mesh]->replaceTexture(index, texID);
+}
+
+void Model::enableTexture(bool enable)
+{
+	m_useTex = enable;
+}
+
+bool Model::isTextureEnabled()
+{
+	return m_useTex;
 }
 
 void Model::setToRender(bool render)
