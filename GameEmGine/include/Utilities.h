@@ -482,7 +482,7 @@ struct Coord3D
 
 	cstring toString()
 	{
-		static char toStr[60];
+		static char toStr[60]{};
 		sprintf_s(toStr, "(%f, %f, %f)", x, y, z);
 		return toStr;
 	}

@@ -12,10 +12,11 @@ class Test: public Scene
 
 #pragma region Variables
 
-	float speed = 0.1f, angle = 1, bloomThresh=0.15;
+	float speed = 20, angle = 1, bloomThresh = 0.15f;
 	Animation ani;
 
 	Model models[10];
+	Transformer trans[10];
 	Model bigBoss[2];
 	Model rocket;
 
@@ -23,7 +24,7 @@ class Test: public Scene
 	Light lit;
 	bool moveLeft, moveRight, moveForward, moveBack, moveUp, moveDown,
 		rotLeft, rotRight, rotUp, rotDown, tiltLeft, tiltRight,
-		tab = false, lutActive = false, enableBloom = false;
+		tab = false, lutActive = false, enableBloom = false,pause=false;
 	Shader
 		* m_lutNGrayscaleShader, * m_bloomHighPass,
 		* m_blurHorizontal, * m_blurVertical,
@@ -34,7 +35,7 @@ class Test: public Scene
 #pragma endregion
 
 public:
-#define SCREEN_RATIO 2
+	int blurPasses = 2;
 
 	void init()
 	{
@@ -69,14 +70,14 @@ public:
 			return;
 		}
 
-		m_buffer1->initColourTexture(0, Game::getWindowWidth() / SCREEN_RATIO, Game::getWindowHeight() / SCREEN_RATIO, GL_RGB8, GL_LINEAR, GL_CLAMP_TO_EDGE);
+		m_buffer1->initColourTexture(0, Game::getWindowWidth() / blurPasses, Game::getWindowHeight() / blurPasses, GL_RGB8, GL_LINEAR, GL_CLAMP_TO_EDGE);
 		if(!m_buffer1->checkFBO())
 		{
 			puts("FBO failed Creation");
 			system("pause");
 			return;
 		}
-		m_buffer2->initColourTexture(0, Game::getWindowWidth() / SCREEN_RATIO, Game::getWindowHeight() / SCREEN_RATIO, GL_RGB8, GL_LINEAR, GL_CLAMP_TO_EDGE);
+		m_buffer2->initColourTexture(0, Game::getWindowWidth() / blurPasses, Game::getWindowHeight() / blurPasses, GL_RGB8, GL_LINEAR, GL_CLAMP_TO_EDGE);
 
 		if(!m_buffer2->checkFBO())
 		{
@@ -101,7 +102,7 @@ public:
 			m_buffer1->clear();
 			m_buffer2->clear();
 
-			glViewport(0, 0, Game::getWindowWidth() / SCREEN_RATIO, Game::getWindowHeight() / SCREEN_RATIO);
+			glViewport(0, 0, Game::getWindowWidth() / 2, Game::getWindowHeight() / 2);
 
 			//binds the initial high pass to buffer 1
 			m_buffer1->enable();
@@ -122,8 +123,8 @@ public:
 			m_buffer1->disable();
 
 			//Takes the high pass and blurs it
-			glViewport(0, 0, Game::getWindowWidth() / SCREEN_RATIO, Game::getWindowHeight() / SCREEN_RATIO);
-			for(int a = 0; a < SCREEN_RATIO; a++)
+			//glViewport(0, 0, Game::getWindowWidth() / 2, Game::getWindowHeight() / 2);
+			for(int a = 0; a < blurPasses; a++)
 			{
 				m_buffer2->enable();
 				m_blurHorizontal->enable();
@@ -204,65 +205,45 @@ public:
 
 
 		// Scene setup 
-		bigBoss[0].create("Models/BOSS/slam/bsl1.obj", "Boss1");
-		puts("is it 1?");
-		bigBoss[0].translate(-15, 0, 0);
+		models[0].create("models/solar system/Sun/Sun.obj", "Sun");
+		models[1].create("models/solar system/Mercury/Mercury.obj", "Mercury");
+		models[2].create("models/solar system/Venus/Venus.obj", "Venus");
+		models[3].create("models/solar system/Earth/Earth.obj", "Earth");
+		models[4].create("models/solar system/Mars/Mars.obj", "Mars");
+		models[5].create("models/solar system/Jupiter/Jupiter.obj", "Jupiter");
+		models[6].create("models/solar system/Saturn/Saturn.obj", "Saturn");
+		models[7].create("models/solar system/Uranus/Uranus.obj", "Uranus");
+		models[8].create("models/solar system/Neptune/Neptune.obj", "Neptune");
 
-		ani.setAnimationSpeed(1);
-		ani.addDir("Models/BOSS/slam/");
-		bigBoss[0].addAnimation("IDK", &ani);
+		for(int a = 0; a < 9; ++a)
+		{
+			if(a)
+				models[a].setParent(&trans[a]);
 
-		bigBoss[0].setAnimation("IDK");
-		ani.play();
-		ani.repeat(true);
+			Game::addModel(&models[a]);
+			models[a].setScale(.1f);
+			models[a].translateBy({25.f * a,0,0});
+		}
+		models[1].scaleBy(.2f);
+		models[2].scaleBy(.2f);
+		models[3].scaleBy(.2f);
+		models[4].scaleBy(.2f);
+		models[5].scaleBy(.8f);
+		models[6].scaleBy(.7f);
+		models[7].scaleBy(.5f);
+		models[8].scaleBy(.4f);
 
-
-		rocket.create("Models/rocket-ship/rocket ship.obj", "ship");
-		puts("is it 2?");
-		bigBoss[1].create(bigBoss[0], "Boss2");
-		puts("is it 3?");
-
-		bigBoss[1].translate(15, 0, 0);
-		bigBoss[0].rotate(0, 90, 0);
-		bigBoss[1].rotate(0, -90, 0);
-
-		//floor 
-		static Model floor, transCube;
-		floor.create(new PrimitivePlane({100,0,100}), "floor");
-		transCube.create(new primitiveCube({20,20,20}), "floor");
-		transCube.setTransparent(true);
-		transCube.setColour(.2, .6, .05, .2);
-		Game::addModel(&transCube);
-		puts("is it 4?");
-
-		Game::addModel(&floor);
-		floor.replaceTexture(0, 0, ResourceManager::getTexture2D("Textures/moon.jpg").id);
-
-
+		//(161.874771, 74.611961, 82.858345)
+		Game::setCameraPosition({161.874771f, 74.611961f, -82.858345f});
+		Game::getMainCamera()->enableFPSMode();
 
 		lit.setLightType(Light::TYPE::POINT);
 		lit.setParent(Game::getMainCamera());
-		lit.setSpecular({0,0,145});
-
+		lit.setDiffuse({155,0,0});
 		LightManager::addLight(&lit);
 
-		//testText.setText("Maybe this Works?");
-		//testText.setColour(1, 0, 0);
-		//testText.textSize(20);
-		//testText.toTexture(50);		
 
-		Game::addModel(&bigBoss[0]);
-		Game::addModel(&bigBoss[1]);
-
-		bigBoss[0].enableTexture(true);
-		//Game::addText(&testText);
-
-		Game::getMainCamera()->enableFPSMode();
-		Game::addModel(&rocket);
-
-		//forward.translate(Game::getMainCamera()->getForward());
-		//model[0].replaceTexture(0, 0, testText.getTexture());
-
+		//Key binds
 		keyPressed =
 			[&](int key, int mod)->void
 		{
@@ -302,32 +283,30 @@ public:
 
 
 			case GLFW_KEY_6:
-				lit.rampActiveDiff = !lit.rampActiveDiff;
-				break;
-			case GLFW_KEY_7:
-				lit.rampActiveSpec = !lit.rampActiveSpec;
-				break;
-			case GLFW_KEY_8:
-				if(lutPath == "textures/hot.cube")
-					lutActive = !lutActive;
-				else
-					lutActive = true;
+				for(int a = 0; a < 9; ++a)
+				{
+					models[a].enableTexture(!models[a].isTextureEnabled());
+					if(models[a].isTextureEnabled())
+						models[a].setColour(1, 1, 1);
+					else
+						models[a].setColour(.35f, 0, .45f);
+				}
 
-				lutPath = "textures/hot.cube";
+
+			case GLFW_KEY_KP_4:
+				bloomThresh -= .05;
 				break;
-			case GLFW_KEY_9:
-				if(lutPath == "textures/cold.cube")
-					lutActive = !lutActive;
-				else
-					lutActive = true;
-				lutPath = "textures/cold.cube";
+
+			case GLFW_KEY_KP_6:
+				bloomThresh += .05;
 				break;
-			case GLFW_KEY_0:
-				if(lutPath == "textures/ye.cube")
-					lutActive = !lutActive;
-				else
-					lutActive = true;
-				lutPath = "textures/ye.cube";
+
+			case GLFW_KEY_COMMA:
+				blurPasses -= 1;
+				if(!blurPasses)blurPasses = 1;
+				break;
+			case GLFW_KEY_PERIOD:
+				blurPasses += 1;
 				break;
 			}
 
@@ -341,7 +320,8 @@ public:
 			if(key == 'N')
 				rocket.setWireframe(frame = !frame);
 			if(key == GLFW_KEY_SPACE)
-				enableSkyBox(sky = !sky);
+				pause = !pause;
+				//enableSkyBox(sky = !sky);
 
 			if(key == GLFW_KEY_F5)
 				Shader::refresh();
@@ -431,31 +411,31 @@ public:
 
 			if(key == GLFW_KEY_DOWN)
 				rotDown = false;
+
+			puts(Game::getMainCamera()->getPosition().toString());
 		};
 
-		//	auto list = Component::getComponentList();
-		//	printf("there are %d items in the list\n", list.size());
-		//	puts("here they are: ");
-		//	for(auto& a : list)
-		//		for(uint b = 0; b < a.second; ++b)
-		//			puts(a.first.c_str());
+		EmGineAudioPlayer::createAudioStream("songs/still alive.mp3");
+		EmGineAudioPlayer::getAudioControl()[0][0]->channel->set3DMinMaxDistance(20, 200);
+
+		EmGineAudioPlayer::play(true);
 	}
 
-	void cameraMovement()
+	void cameraMovement(float dt)
 	{
 		// Movement
 		if(moveLeft)
-			Game::translateCameraBy({-speed,0,0});
+			Game::translateCameraBy({-speed * dt,0,0});
 		if(moveRight)
-			Game::translateCameraBy({speed,0,0});
+			Game::translateCameraBy({speed * dt,0,0});
 		if(moveForward)
-			Game::translateCameraBy({0,0,speed});
+			Game::translateCameraBy({0,0,speed * dt});
 		if(moveBack)
-			Game::translateCameraBy({0,0,-speed});
+			Game::translateCameraBy({0,0,-speed * dt});
 		if(moveUp)
-			Game::translateCameraBy({0,speed,0});
+			Game::translateCameraBy({0,speed * dt,0});
 		if(moveDown)
-			Game::translateCameraBy({0,-speed,0});
+			Game::translateCameraBy({0,-speed * dt,0});
 
 		// Rotation
 		if(tiltLeft)
@@ -503,12 +483,35 @@ public:
 
 	void update(double dt)
 	{
-		cameraMovement();
-		float speed = 5;
-		ani.setAnimationSpeed((float)speed / ani.getTotalFrames());
-		ani.stop();
-		bigBoss[0].translate(lerp(Coord3D<>{-60, 0, 0}, Coord3D<>{-15, 0, 0}, .6f));
-		bigBoss[1].translate(lerp(Coord3D<>{60, 0, 0}, Coord3D<>{15, 0, 0}, fmodf(clock() / (float)CLOCKS_PER_SEC + 1, speed) / speed));
+		cameraMovement(dt);
+		float maxSpeed = 10;
+
+		if(!pause)
+		{
+
+		trans[1].rotateBy({0,maxSpeed * 1.0f * (float)dt,0});
+		trans[2].rotateBy({0,maxSpeed * 0.9f * (float)dt,0});
+		trans[3].rotateBy({0,maxSpeed * 0.8f * (float)dt,0});
+		trans[4].rotateBy({0,maxSpeed * 0.7f * (float)dt,0});
+		trans[5].rotateBy({0,maxSpeed * 0.6f * (float)dt,0});
+		trans[6].rotateBy({0,maxSpeed * 0.5f * (float)dt,0});
+		trans[7].rotateBy({0,maxSpeed * 0.4f * (float)dt,0});
+		trans[8].rotateBy({0,maxSpeed * 0.3f * (float)dt,0});
+		for(int a = 0; a < 9; ++a)
+			models[a].rotateBy(0, (10 - a) * 5 * dt, 0);
+		}
+
+		auto tmpOBJPos = models[0].getPosition();
+		EmGineAudioPlayer::getAudioControl()[0][0]->listener->pos = *(FMOD_VEC3*)&tmpOBJPos;
+		
+		auto tmpPos = Game::getMainCamera()->getPosition();
+		auto tmpUp = Game::getMainCamera()->getUp();
+		auto tmpForward = Game::getMainCamera()->getForward();
+		EmGineAudioPlayer::getAudioSystem()->set3DListenerAttributes(0, (FMOD_VEC3*)&tmpPos, nullptr,(FMOD_VEC3*)&tmpForward, (FMOD_VEC3*)&tmpUp);
+
+		EmGineAudioPlayer::update();
+
+
 	}
 };
 

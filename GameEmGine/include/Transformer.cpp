@@ -132,12 +132,12 @@ void Transformer::translate(Coord3D<> pos)
 
 void Transformer::scaleBy(float scale)
 {
-	Transformer::scaleBy(m_scaleDat.x + scale, m_scaleDat.y + scale, m_scaleDat.z + scale);
+	Transformer::scaleBy(m_scaleDat.x * scale, m_scaleDat.y * scale, m_scaleDat.z * scale);
 }
 
 void Transformer::scaleBy(float x, float y, float z)
 {
-	Transformer::setScale(m_scaleDat + Coord3D<>(x, y, z));
+	Transformer::setScale(m_scaleDat * Coord3D<>(x, y, z));
 }
 
 void Transformer::setScale(float scale)

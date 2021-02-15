@@ -1,0 +1,46 @@
+#version 420
+
+uniform sampler2D uTex;
+
+uniform bool textured;
+uniform bool darken = false;
+uniform bool isTrans = false;
+uniform vec4 colourMod;
+
+in vec2 texcoord;
+in vec3 norm;
+in vec4 pos;
+
+layout(location = 0)out vec4 positionOP;
+layout(location = 1)out vec4 positionTrans;
+layout(location = 2)out vec4 normalOP;
+layout(location = 3)out vec4 normalTrans;
+layout(location = 4)out vec4 outColour;
+
+void main()
+{
+
+    positionOP    = pos * float(!isTrans);
+    positionTrans = pos * float( isTrans);
+    normalOP      = vec4(normalize(norm),1) * float(!isTrans);
+    normalTrans   = vec4(normalize(norm),1) * float( isTrans);
+
+    //reverse the z component of the normal
+    //normal.z*=-1;
+    
+    outColour = colourMod; 
+    if(textured)
+    {       
+        vec4 textureColour = texture(uTex, texcoord);
+        outColour          = textureColour;
+        outColour         *= colourMod;
+    }
+         
+    
+    
+    
+    outColour.rgb *= darken ? outColour.rgb * 1.2 : vec3(1, 1, 1);
+    outColour.a = isTrans ? outColour.a : 1 ;     
+   
+    
+}

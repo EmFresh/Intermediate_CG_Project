@@ -1,17 +1,18 @@
 #version 420
 
 // enums
-const int DEFAULT = 0;
-const int POINT = 1;
-const int DIRECTIONAL = 2;
-const int SPOTLIGHT = 3;
+const int NONE = 0;
+const int DEFAULT = NONE + 1;
+const int POINT = NONE + 2;
+const int DIRECTIONAL = NONE + 3;
+const int SPOTLIGHT = NONE + 4;
 
 uniform vec4 LightPosition;
 
 // colour
-uniform vec3 LightAmbient;
-uniform vec3 LightDiffuse;
-uniform vec3 LightSpecular;
+uniform vec3 LightAmbient  = vec3(1);
+uniform vec3 LightDiffuse  = vec3(1);
+uniform vec3 LightSpecular = vec3(1);
 
 // scalar
 uniform float LightSpecularExponent;
@@ -20,7 +21,7 @@ uniform float Attenuation_Linear;
 uniform float Attenuation_Quadratic;
 
 // other
-uniform bool LightEnable = true;
+uniform bool LightEnable = false;
 uniform bool AmbiantEnable = true;
 uniform bool DiffuseEnable = true;
 uniform bool SpecularEnable = true;
@@ -44,20 +45,14 @@ in vec2 texcoord;
 
 out vec4 outColor;
 
-void pointLight();
 void directionalLight();
-vec3 calculatePointLight();
+void spotLight();
+void pointLight();
 
 void defaultLight() { directionalLight(); }
 
-void spotLight() 
-{
-  
 
-}
-
-vec3 blinnPhong(vec3 lightDir, vec3 viewDir, vec3 pos, vec3 norm )
-{
+vec3 blinnPhong(vec3 lightDir, vec3 viewDir, vec3 pos, vec3 norm ) {
   //vec3 pos   = (texture(uPosOP,  texcoord)).rgb;//frag position  
   //vec3 norm    = (texture(uNormOP, texcoord)).rgb;
   vec3 halfDir = normalize(lightDir + viewDir);
@@ -66,78 +61,85 @@ vec3 blinnPhong(vec3 lightDir, vec3 viewDir, vec3 pos, vec3 norm )
   //Blinn-Phong Lighting here:
   
   //Diffuse   
-  diffuse = max(dot(norm, lightDir),0.0)  * LightDiffuse * int(DiffuseEnable);
+  diffuse = max(dot(norm, lightDir), 0.0)  * LightDiffuse * int(DiffuseEnable);
   diffuse *= ( toonActiveDiff ? texture(uRamp,vec2(max(dot(norm, lightDir),0.0))).rgb : vec3(1)) ;
 
   //Specular  
-  specular = pow(max(dot(norm, halfDir),0.0), LightSpecularExponent) *
-    LightSpecular * int(SpecularEnable);
-  specular *=  (toonActiveSpec ? texture(uRamp,vec2(pow(max(dot(norm, halfDir),0.0), LightSpecularExponent))).rgb : vec3(1)) ;
+  specular = pow(max(dot(norm, halfDir), 0.0), LightSpecularExponent) * LightSpecular * int(SpecularEnable);
+  specular *=  (toonActiveSpec ? texture(uRamp,vec2(pow(max(dot(norm, halfDir), 0.0), LightSpecularExponent))).rgb : vec3(1)) ;
  
   return (diffuse + specular) * int(LightEnable);
 }
 
-vec3 calculatePointLight(){
+vec3 calculateSpotLight() {
+  //variables  
+  vec3 posOP          = (texture(uPosOP    , texcoord)).rgb;//frag position
+  vec3 posTrans       = (texture(uPosTrans , texcoord)).rgb;//frag position
+  vec3 normOP         = (texture(uNormOP   , texcoord)).rgb;
+  vec3 normTrans      = (texture(uNormTrans, texcoord)).rgb;
+  vec3 lightDirOP     = normalize(LightPosition.xyz - posOP);
+  vec3 lightDirTrans  = normalize(LightPosition.xyz - posTrans);
+  vec3 viewDirOP      = uViewPos.xyz - posOP;   
+  vec3 viewDirTrans   = uViewPos.xyz - posTrans;   
+  
+  //Calculate angle between light direction and light ray
+  float thetaOP    = dot(lightDirOP   , normalize(LightDirection));
+  float thetaTrans = dot(lightDirTrans, LightDirection);
+
+  //return 
+  return
+  blinnPhong(lightDirOP   ,    viewDirOP,   posOP,     normOP)/* * vec3(int((thetaOP    > LightAngleConstraint))) +  
+  blinnPhong(lightDirTrans, viewDirTrans, posTrans, normTrans) * int(thetaTrans < LightAngleConstraint)*/;
+}
+
+void spotLight() {  
+outColor.rbg += calculateSpotLight();
+}
+
+vec3 calculatePointLight() {
 
   //variables  
-  vec3 posOP     = (texture(uPosOP    , texcoord)).rgb;//frag position
-  vec3 posTrans  = (texture(uPosTrans , texcoord)).rgb;//frag position
-  vec3 normOP    = (texture(uNormOP   , texcoord)).rgb;
-  vec3 normTrans = (texture(uNormTrans, texcoord)).rgb;
-  vec3 lightDirOP  = normalize(LightPosition.xyz - posOP);
-  vec3 lightDirTrans = normalize(LightPosition.xyz - posTrans);
-  vec3 viewDirOP   = uViewPos.xyz - posOP;   
+  vec3 posOP          = (texture(uPosOP    , texcoord)).rgb;//frag position
+  vec3 posTrans       = (texture(uPosTrans , texcoord)).rgb;//frag position
+  vec3 normOP         = (texture(uNormOP   , texcoord)).rgb;
+  vec3 normTrans      = (texture(uNormTrans, texcoord)).rgb;
+  vec3 lightDirOP     = normalize(LightPosition.xyz - posOP);
+  vec3 lightDirTrans  = normalize(LightPosition.xyz - posTrans);
+  vec3 viewDirOP      = uViewPos.xyz - posOP;   
   vec3 viewDirTrans   = uViewPos.xyz - posTrans;   
   
   //Atenuation calculation
-  float distOP= length(LightPosition.xyz - posOP);
-  float distTrans= length(LightPosition.xyz - posTrans);
-  float attenuationOP = ( 1.0 / (Attenuation_Constant + Attenuation_Linear * distOP + Attenuation_Quadratic * (distOP * distOP)));
+  float distOP           = length(LightPosition.xyz -    posOP);
+  float distTrans        = length(LightPosition.xyz - posTrans);
+  float attenuationOP    = ( 1.0 / (Attenuation_Constant + Attenuation_Linear *    distOP + Attenuation_Quadratic * (distOP    *    distOP)));
   float attenuationTrans = ( 1.0 / (Attenuation_Constant + Attenuation_Linear * distTrans + Attenuation_Quadratic * (distTrans * distTrans)));
   
   //return 
   return
-  blinnPhong(lightDirOP, viewDirOP, posOP, normOP) * attenuationOP +  
+  blinnPhong(lightDirOP   ,    viewDirOP,    posOP,    normOP) * attenuationOP   +  
   blinnPhong(lightDirTrans, viewDirTrans, posTrans, normTrans) * attenuationTrans;
 
 }
 
 void pointLight() {   
  outColor.rgb += calculatePointLight();
- //outColor =(texture(uScene, texcoord));
- }
-
-vec3 calculateDirectionalLight() {
-  vec3 norm = (texture(uNormOP, texcoord)).rgb;
-  vec3 pos  = (texture(uPosOP, texcoord)).rgb;
-  
-  
- // float diff = max(dot(norm, lightDir), 0.0);
-
- // vec3 reflectDir = reflect(-lightDir, norm);
-  vec3 viewDir    = uViewPos.xyz - pos;
-  //float spec = pow(max(dot(viewDir, reflectDir), 0), LightSpecularExponent);
-
-  vec3 diffuse = LightDiffuse;
-  vec3 specular = LightSpecular;
-
-  //Blinn-Phong Lighting here:
-  
-  //Diffuse 
-  vec3 lightDir = normalize(-LightDirection);
- diffuse = max(dot(norm, lightDir),0.0) * LightDiffuse;
-
-  //Specular
-  vec3 halfDir    = normalize(lightDir + viewDir);
-  specular = pow(max(dot(viewDir, halfDir),0.0), LightSpecularExponent) *  LightSpecular;
-
-
-  
-  return diffuse + specular;
 }
 
-void directionalLight() {
- 
+vec3 calculateDirectionalLight() {
+ //variables  
+  vec3 posOP          = (texture(uPosOP    , texcoord)).rgb;//frag position
+  vec3 posTrans       = (texture(uPosTrans , texcoord)).rgb;//frag position
+  vec3 normOP         = (texture(uNormOP   , texcoord)).rgb;
+  vec3 normTrans      = (texture(uNormTrans, texcoord)).rgb;
+  vec3 viewDirOP      = uViewPos.xyz - posOP;   
+  vec3 viewDirTrans   = uViewPos.xyz - posTrans; 
+  
+ return 
+ blinnPhong(-LightDirection,    viewDirOP,    posOP,    normOP) +
+ blinnPhong(-LightDirection, viewDirTrans, posTrans, normTrans);
+}
+
+void directionalLight() { 
   outColor.rgb += calculateDirectionalLight();
 }
 
@@ -148,10 +150,11 @@ void main() {
 
   // Ambient Light
   float ambientStrength = 1.0;
-  outColor.rgb = colour * LightAmbient * ambientStrength * int(AmbiantEnable);
-
+  outColor = vec4(colour * LightAmbient * ambientStrength * int(AmbiantEnable), 1);
  
     switch (LightType) {
+    case NONE:
+      break;
     case POINT:
       pointLight();
       break;
@@ -163,10 +166,10 @@ void main() {
       break;
     default:
       defaultLight();
+      break;
     }
 
 
-  //outColor = normalize(texture(uPosOP,texcoord));
+  //outColor = texture(uScene,texcoord);
   //outColor.rgb = abs(texture(uNormOP,texcoord).rgb);
-  outColor.a = 1;
 }

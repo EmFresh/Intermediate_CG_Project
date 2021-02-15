@@ -490,11 +490,12 @@ void GameEmGine::update()
 
 	glViewport(0, 0, getWindowWidth(), getWindowHeight());
 
+	//Opaque renders 
 	m_gBuffer->enable();
 	m_mainCamera->render(m_gBufferShader, m_models, false);
 	m_gBuffer->disable();
 
-
+	//send depth info before rendering transparent objects
 	m_gBuffer->moveDepthToBuffer(getWindowWidth(), getWindowHeight(), m_postBuffer->getFrameBufferID());
 
 	//sky box
@@ -503,17 +504,14 @@ void GameEmGine::update()
 		(*(SkyBox*)&m_mainScene->getSkyBox()).render();
 	m_gBuffer->disable();
 	
-
-	//m_postBuffer->moveColourToBuffer(getWindowWidth(), getWindowHeight(), m_gBuffer, 0, 4);
-
+	//transparent renders
 	m_gBuffer->enable();
 	m_mainCamera->render(m_gBufferShader, m_models, true);
 	m_gBuffer->disable();
 	
 
 	{
-
-		//store data for post process
+		//store data for later post process
 		m_postBuffer->enable();
 		m_postProcess->enable();
 
@@ -538,7 +536,8 @@ void GameEmGine::update()
 		m_postProcess->sendUniform("uScene", 4);
 		m_postProcess->sendUniform("uRamp", 5);
 
-		//FrameBuffer::drawFullScreenQuad();
+		m_postProcess->sendUniform("LightType", Light::TYPE::NONE);
+		FrameBuffer::drawFullScreenQuad();
 
 		//Apply lighting
 		LightManager::setShader(m_postProcess);
@@ -552,7 +551,6 @@ void GameEmGine::update()
 
 		m_postProcess->disable();
 		m_postBuffer->disable();
-
 	}
 
 	//post effects

@@ -11,6 +11,7 @@ struct Light:public Transformer
 {
 	enum TYPE
 	{
+		NONE,
 		DEFAULT,
 		POINT,
 		DIRECTIONAL,
@@ -40,6 +41,8 @@ struct Light:public Transformer
 	void setAttenuationLinear(float attenLinear);
 
 	void setAttenuationQuadratic(float attenQuad);
+
+	void setAngleConstraint(float angle);
 
 	void enableLight(bool enable);
 	void enableAmbiant(bool enable);

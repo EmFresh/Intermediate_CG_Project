@@ -1,0 +1,22 @@
+#version 420 core
+layout (location = 0) in vec4 vertex; // <vec2 pos, vec2 tex>
+out vec2 TexCoords;
+
+uniform bool flip = false;
+uniform mat4 uView;
+uniform mat4 uLocalModel;
+uniform mat4 uWorldModel;
+uniform mat4 uProj;
+
+void main()
+{
+    vec4 viewSpace = uWorldModel * (uLocalModel * vec4(vertex.xy, 0.0, 1.0));
+    viewSpace = uProj * uView * viewSpace;
+   
+    gl_Position = viewSpace;
+    
+
+    TexCoords = vertex.zw;
+
+    TexCoords.y = abs(TexCoords.y - float(flip));
+}  

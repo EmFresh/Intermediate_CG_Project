@@ -1,0 +1,35 @@
+#version 420
+
+uniform sampler2D uTex;
+uniform float uLerp=0;
+//3D texture
+layout(binding = 6) uniform sampler3D customTexure;
+uniform int lutSize;
+uniform bool lutActive;
+
+in vec2 texcoord;
+
+out vec4 outColour;
+
+void main()
+{
+    vec4 source  = texture(uTex, texcoord);
+
+    float luminance = 
+    0.2989 * source.r + 
+    0.587  * source.g + 
+    0.114  * source.b;
+
+	outColour = source;
+
+	if(lutActive == true)
+	{
+		vec3 scale = vec3(((lutSize) - 1.0) / (lutSize));
+		vec3 offset = vec3(0.5 /  (lutSize));
+		source.rgb = texture(customTexure, outColour.rgb * scale + offset).rgb;
+	}
+
+//	outColour = source;
+	outColour = vec4(mix(source.rgb, vec3(luminance, luminance, luminance),uLerp), 1);
+	outColour.a=1;
+}

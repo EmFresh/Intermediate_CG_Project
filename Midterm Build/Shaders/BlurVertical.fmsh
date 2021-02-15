@@ -1,0 +1,22 @@
+#version 420
+
+uniform sampler2D uTex;
+uniform float uPixleSize;// 1 / height
+in vec2 texcoord;
+
+out vec4 outColour;
+
+void main()
+{
+    
+    outColour.rgb = vec3(0,0,0);
+    outColour.a = 1;
+
+    outColour.rgb += texture(uTex,vec2(texcoord.x - 3 * uPixleSize,texcoord.y)).rgb * 0.09;
+    outColour.rgb += texture(uTex,vec2(texcoord.x - 2 * uPixleSize,texcoord.y)).rgb * 0.12;
+    outColour.rgb += texture(uTex,vec2(texcoord.x - uPixleSize,    texcoord.y)).rgb * 0.15;
+    outColour.rgb += texture(uTex,vec2(texcoord.x,                 texcoord.y)).rgb * 0.16;
+    outColour.rgb += texture(uTex,vec2(texcoord.x + uPixleSize,    texcoord.y)).rgb * 0.15;
+    outColour.rgb += texture(uTex,vec2(texcoord.x + 2 * uPixleSize,texcoord.y)).rgb * 0.12;
+    outColour.rgb += texture(uTex,vec2(texcoord.x + 3 * uPixleSize,texcoord.y)).rgb * 0.09;
+}

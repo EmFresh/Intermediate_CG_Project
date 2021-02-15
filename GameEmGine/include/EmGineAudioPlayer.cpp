@@ -6,7 +6,7 @@
 unsigned int EmGineAudioPlayer::stopIndex = 0;
 AudioSystem* EmGineAudioPlayer::m_system;
 AudioChannelGroup* EmGineAudioPlayer::m_mainChannelGroup;
-std::vector<AudioControle*>* EmGineAudioPlayer::m_control;
+std::vector<AudioControl*>* EmGineAudioPlayer::m_control;
 #pragma endregion
 
 void EmGineAudioPlayer::init(int channels)
@@ -14,7 +14,7 @@ void EmGineAudioPlayer::init(int channels)
 	if(m_system)
 		return;
 
-	m_control = new std::vector<AudioControle*>;
+	m_control = new std::vector<AudioControl*>;
 
 	if(FMOD::System_Create(&m_system))
 	{
@@ -51,7 +51,7 @@ bool EmGineAudioPlayer::createAudio(const char* file, std::string tag)
 		printf("failed to create Audio\n");
 		return false;
 	}
-	m_control->push_back(new AudioControle{newSound,nullptr,new Listener});
+	m_control->push_back(new AudioControl{newSound,nullptr,new Listener});
 
 	printError(m_system->playSound(m_control[0][m_control->size() - 1]->sound, m_mainChannelGroup, true, &m_control->back()->channel), "Line 50");
 	
@@ -67,7 +67,7 @@ bool EmGineAudioPlayer::createAudioStream(const char* file, std::string tag)
 		return false;
 	}
 
-	m_control->push_back(new AudioControle{newSound,nullptr,new Listener});
+	m_control->push_back(new AudioControl{newSound,nullptr,new Listener});
 	printError(m_system->playSound(m_control[0][m_control->size() - 1]->sound, m_mainChannelGroup, true, &m_control->back()->channel), "Line 64");
 	
 	return true;
@@ -316,7 +316,7 @@ FMOD::ChannelGroup* EmGineAudioPlayer::getMasterChannelGroup()
 	return cg;
 }
 
-std::vector<AudioControle*>* EmGineAudioPlayer::getAudioControle()
+std::vector<AudioControl*>* EmGineAudioPlayer::getAudioControl()
 {
 	return m_control;
 }
@@ -325,6 +325,7 @@ void EmGineAudioPlayer::update()
 {
 	for(auto& a : *m_control)
 		a->channel->set3DAttributes(&a->listener->pos, &a->listener->vel);
+	
 
 	printError(m_system->update());
 }

@@ -1,0 +1,44 @@
+#version 420
+
+uniform bool flip = false;
+uniform uint uAni = 0;
+uniform float uTime = 0;
+uniform mat4 uLocalModel;
+uniform mat4 uWorldModel;
+uniform mat4 uView;
+uniform mat4 uProj;
+
+layout(location = 0) in vec3 in_vert1;
+layout(location = 1) in vec2 in_uv;
+layout(location = 2) in vec3 in_normal1;
+
+layout(location = 3) in vec3 in_vert2;
+layout(location = 4) in vec3 in_normal2;
+
+out vec2 texcoord;
+out vec3 norm;
+out vec4 pos;
+
+void main()
+{
+    
+    texcoord = in_uv;
+    texcoord.y = abs(1 - float(!flip) - texcoord.y);
+
+    vec3 normal = mix(in_normal1, in_normal2, uTime);
+    vec3 vert = mix(in_vert1, in_vert2, uTime);
+
+    //gets the rotation of the matrix and rotates the normals
+    norm = mat3(uWorldModel) * (mat3(uLocalModel) * normal);
+    norm = normalize(norm);
+    
+    vec4 viewSpace = uWorldModel * (uLocalModel * vec4(vert, 1.0f));
+    pos = viewSpace;
+    
+    viewSpace = uProj * uView * viewSpace; 
+    gl_Position = viewSpace;
+   
+    viewSpace = uWorldModel * (uLocalModel * vec4(vert, 1.0f));    
+   // viewSpace = uProj * viewSpace; 
+   
+}

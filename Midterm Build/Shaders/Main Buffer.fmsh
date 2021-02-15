@@ -1,0 +1,12 @@
+#version 420
+
+uniform sampler2D uTex;
+
+in vec2 texcoord;
+
+out vec4 outColour;
+
+void main()
+{
+    outColour =  texture(uTex, texcoord);
+}

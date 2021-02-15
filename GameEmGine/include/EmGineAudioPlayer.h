@@ -19,12 +19,12 @@ struct Listener
 	FMOD_VEC3 pos = {0,0,0},
 		vel = {0,0,0},
 		up = {0,1,0},
-		forward = {1,0,0};
+		forward = {0,0,1};
 };
 
-struct AudioControle
+struct AudioControl
 {
-	~AudioControle()
+	~AudioControl()
 	{
 		//delete sound;
 		//delete channel;
@@ -131,7 +131,7 @@ public:
 
 	static AudioChannelGroup* getMasterChannelGroup();
 
-	static std::vector<AudioControle*>* getAudioControle();
+	static std::vector<AudioControl*>* getAudioControl();
 
 	//required for certain functionality (i.e. audio cleanup,3D sound...)
 	static void update();
@@ -146,7 +146,7 @@ private:
 
 	static AudioSystem* m_system;
 	static AudioChannelGroup* m_mainChannelGroup;
-	static std::vector<AudioControle*>* m_control;
+	static std::vector<AudioControl*>* m_control;
 	//static std::vector<Audio*>* m_sounds;
 };
 

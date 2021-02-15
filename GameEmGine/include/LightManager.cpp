@@ -1,5 +1,6 @@
+#define _USE_MATH_DEFINES
+#include <cmath>
 #include "LightManager.h"
-
 #pragma region Static Variables
 std::vector<Light*>LightManager::m_lights;
 FrameBuffer* LightManager::m_framebuffer;
@@ -52,7 +53,7 @@ void LightManager::setShader(Shader* shad)
 
 std::vector<FrameBuffer*> LightManager::shadowBuffers(unsigned w, unsigned h, std::unordered_map<void*, Model*>& models, unsigned index)
 {
-	
+
 	if(m_lights[index]->type == Light::TYPE::POINT)
 	{
 
@@ -126,14 +127,9 @@ std::vector<FrameBuffer*> LightManager::shadowBuffers(unsigned w, unsigned h, st
 
 void LightManager::update()
 {
-	
 
 	if(m_framebuffer)
-	{
 		m_framebuffer->enable();
-		//glActiveTexture(GL_TEXTURE2);
-		//glBindTexture(GL_TEXTURE_2D, m_framebuffer->getColorHandle(0));
-	}
 	m_shader->enable();
 
 	for(unsigned a = 0; a < m_lights.size(); a++)
@@ -145,7 +141,7 @@ void LightManager::update()
 			continue;
 		}
 		m_shader->sendUniform("LightEnable", true);
-		
+
 		m_shader->sendUniform("AmbiantEnable", m_lights[a]->ambiantEnable);
 		m_shader->sendUniform("DiffuseEnable", m_lights[a]->diffuseEnable);
 		m_shader->sendUniform("SpecularEnable", m_lights[a]->specularEnable);
@@ -157,15 +153,15 @@ void LightManager::update()
 
 
 		pos = m_lights[a]->getWorldTranslationMatrix() * (m_lights[a]->getLocalTranslationMatrix() * glm::vec4(m_lights[a]->getPosition().toVec3(), 1));
-	//	pos = m_cam->getProjectionMatrix() * pos;
-	//	pos.z *= -1;
-		//if(pos.w)
-		//	pos /= pos.w;
-		//else
-		//	pos = {0,0,0,1};
+		//	pos = m_cam->getProjectionMatrix() * pos;
+		//	pos.z *= -1;
+			//if(pos.w)
+			//	pos /= pos.w;
+			//else
+			//	pos = {0,0,0,1};
 
 
-		//pos = glm::normalize(pos);
+			//pos = glm::normalize(pos);
 		m_shader->sendUniform("LightPosition", pos);
 
 
@@ -177,14 +173,16 @@ void LightManager::update()
 		m_shader->sendUniform("uViewPos", pos);
 
 		m_shader->sendUniform("LightType", (int)m_lights[a]->type);
-	
+
 		m_shader->sendUniform("LightAmbient", Coord3D<>{m_lights[a]->ambient[0] / 255.0f, m_lights[a]->ambient[1] / 255.0f, m_lights[a]->ambient[2] / 255.0f});
 
-		m_shader->sendUniform("LightDiffuse", m_lights[a]->diffuse[0] / 255.0f, m_lights[a]->diffuse[1] / 255.0f, m_lights[a]->diffuse[2] / 255.0f);
+		m_shader->sendUniform("LightDiffuse", Coord3D<>{ m_lights[a]->diffuse[0] / 255.0f, m_lights[a]->diffuse[1] / 255.0f, m_lights[a]->diffuse[2] / 255.0f});
 
-		m_shader->sendUniform("LightSpecular", m_lights[a]->specular[0] / 255.0f, m_lights[a]->specular[1] / 255.0f, m_lights[a]->specular[2] / 255.0f);
+		m_shader->sendUniform("LightSpecular", Coord3D<>{ m_lights[a]->specular[0] / 255.0f, m_lights[a]->specular[1] / 255.0f, m_lights[a]->specular[2] / 255.0f});
 
-		m_shader->sendUniform("LightDirection", dir);
+		m_shader->sendUniform("LightDirection", Coord3D<>(dir));
+
+		m_shader->sendUniform("LightAngleConstraint", m_lights[a]->angleConstraint);
 
 		m_shader->sendUniform("LightSpecularExponent", m_lights[a]->specularExponent);
 
@@ -225,17 +223,17 @@ void Light::setLightType(TYPE a_type)
 
 void Light::setAmbient(ColourRGBA ambi)
 {
-	(ColourRGBA)ambient = ambi;
+	ambient = ambi;
 }
 
 void Light::setDiffuse(ColourRGBA diff)
 {
-	(ColourRGBA)diffuse = diff;
+	diffuse = diff;
 }
 
 void Light::setSpecular(ColourRGBA spec)
 {
-	(ColourRGBA)specular = spec;
+	specular = spec;
 }
 
 void Light::setRamp(Texture2D* ramp)
@@ -262,6 +260,11 @@ void Light::setAttenuationLinear(float attenLinear)
 void Light::setAttenuationQuadratic(float attenQuad)
 {
 	*(float*)&attenuationQuadratic = attenQuad;
+}
+
+void Light::setAngleConstraint(float angle)
+{
+	angleConstraint = float(M_PI / 180 * angle);
 }
 
 void Light::enableLight(bool enable)

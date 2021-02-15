@@ -1,0 +1,13 @@
+
+uniform sampler2D uScene;
+uniform sampler2D uShadows;
+
+in vec2 texcoord;
+
+out vec4 colour;
+
+void main()
+{
+    colour = vec4( texture(uScene,texcoord) * texture(uShadows,texcoord).r);
+    colour.a = 1;
+}

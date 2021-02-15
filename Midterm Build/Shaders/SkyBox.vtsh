@@ -1,0 +1,15 @@
+#version 420
+
+layout(location = 0) in vec3 in_vert;
+
+uniform mat4 uProj;
+uniform mat4 uView;
+
+out vec3 texCoord;
+
+void main()
+{
+    texCoord = in_vert;
+    vec4 pos = (uProj * uView * vec4(in_vert, 1.0));
+    gl_Position = pos.xyww;
+}
