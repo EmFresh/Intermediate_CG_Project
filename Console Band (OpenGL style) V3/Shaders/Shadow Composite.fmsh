@@ -5,6 +5,7 @@ uniform sampler2D uPosition;
 uniform sampler2D uShadow; 
 uniform mat4 uLightViewProj;
 uniform bool uShadowEnable = true;
+uniform float uOpacity = 0.5;
 
 in vec2 texcoord;
 out vec4 outColour;
@@ -26,7 +27,7 @@ float calculateShadow()
     return 1;//errors occur 
   
     // int(!bool(length(texture(uPosition, texcoord).xyz)));
-    return (currentDepth - bias > closestDepth ? 0 : 1) ;
+    return clamp((currentDepth - bias > closestDepth ? 0 : 1) + (1 - uOpacity), 0, 1) ;
 }
 
 void main()

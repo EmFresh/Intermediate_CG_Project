@@ -136,9 +136,11 @@ void LightManager::shadowRender(unsigned w, unsigned h, FrameBuffer* to, GLuint 
 			}
 
 			//get shadow view
+			glCullFace(GL_FRONT);
 			m_shadows->enable();
 			cam.render(shad, models,false,true);
 			m_shadows->disable();
+			glCullFace(GL_BACK);
 
 
 			//render shadow 

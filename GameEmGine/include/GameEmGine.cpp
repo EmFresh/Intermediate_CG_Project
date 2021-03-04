@@ -166,6 +166,7 @@ void GameEmGine::run()
 	{
 		glClearColor((float)m_colour.r / 255, (float)m_colour.g / 255, (float)m_colour.b / 255, (float)m_colour.a / 255);//BG colour
 		//glClearColor(0.f, 0.f, 0.f, 0.f);
+		glCullFace(GL_BACK);
 
 		InputManager::update();
 		update();
