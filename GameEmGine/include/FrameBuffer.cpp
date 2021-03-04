@@ -102,8 +102,8 @@ void FrameBuffer::resizeDepth(unsigned width, unsigned height)
 		glTexStorage2D(GL_TEXTURE_2D, 1, GL_DEPTH_COMPONENT24, width, height);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
 
 		//Bind texture to the fbo
 		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, m_depthAttachment, 0);
@@ -159,24 +159,42 @@ void FrameBuffer::unload()
 	m_numColorAttachments = 0;
 }
 
+void FrameBuffer::setClearColour(ColourRGBA col)
+{
+#define TO_BYTE_MULTI 0.0039215686274509803921568627451f
+	setClearColour(col.r * TO_BYTE_MULTI, col.g * TO_BYTE_MULTI, col.b * TO_BYTE_MULTI, col.a * TO_BYTE_MULTI);
+}
+
+void FrameBuffer::setClearColour(float r, float g, float b, float a)
+{
+	glClearColor(r, g, b, a);//BG colour
+}
+
 // Clears all attached textures
-void FrameBuffer::clear()
+void FrameBuffer::clear(GLbitfield clearBit)
 {
 	GLbitfield temp = 0;
 
 	if(m_depthAttachment != GL_NONE)
 	{
-		temp = temp | GL_DEPTH_BUFFER_BIT;
+		temp |= GL_DEPTH_BUFFER_BIT;
 	}
 
 	if(m_colorAttachments != nullptr)
 	{
-		temp = temp | GL_COLOR_BUFFER_BIT;
+		temp |= GL_COLOR_BUFFER_BIT;
 	}
 
 	glBindFramebuffer(GL_FRAMEBUFFER, m_fboID);
-	glClear(temp);
+	glClear(clearBit ? clearBit : temp);
 	glBindFramebuffer(GL_FRAMEBUFFER, GL_NONE);
+}
+
+
+void FrameBuffer::clearBackBuffer(bool clearCol, bool clearDep)
+{
+	glBindFramebuffer(GL_FRAMEBUFFER, GL_NONE);
+	glClear((GL_COLOR_BUFFER_BIT * clearCol) | (GL_COLOR_BUFFER_BIT * clearDep));
 }
 
 void FrameBuffer::enable()

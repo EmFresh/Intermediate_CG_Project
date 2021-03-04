@@ -22,9 +22,12 @@ public:
 	// Clears all OpenGL memory
 	void unload();
 
+	// Set Clear Colour for the next clear calls
+	static void setClearColour(ColourRGBA = {});
+	static void setClearColour(float r, float g, float b, float a);
 	// Clears all attached textures
-	void clear();
-
+	void clear(GLbitfield =0);
+	static void clearBackBuffer(bool clearCol = true, bool clearDep = true);
 	//binds objects to frame buffer/s
 	void enable();
 
