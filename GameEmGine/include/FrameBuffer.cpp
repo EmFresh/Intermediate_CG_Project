@@ -55,6 +55,7 @@ void FrameBuffer::initDepthTexture(unsigned width, unsigned height)
 
 void FrameBuffer::resizeColour(unsigned index, unsigned width, unsigned height, GLint internalFormat, GLint filter, GLint wrap)
 {
+	if(!(width && height))return;
 	if(m_colorAttachments[index])
 	{
 		glBindFramebuffer(GL_FRAMEBUFFER, m_fboID);
@@ -80,10 +81,13 @@ void FrameBuffer::resizeColour(unsigned index, unsigned width, unsigned height, 
 		glBindTexture(GL_TEXTURE_2D, 0);
 		glDeleteTextures(1, &tmpAttachment);
 	}
+	if(!checkFBO())
+		puts("error resizing colour texture");
 }
 
 void FrameBuffer::resizeDepth(unsigned width, unsigned height)
 {
+	if(!(width && height))return;
 	if(m_depthAttachment)
 	{
 		glBindFramebuffer(GL_FRAMEBUFFER, m_fboID);
@@ -107,6 +111,9 @@ void FrameBuffer::resizeDepth(unsigned width, unsigned height)
 		glBindTexture(GL_TEXTURE_2D, 0);
 		glDeleteTextures(1, &tmpAttachment);
 	}
+
+	if(!checkFBO())
+		puts("error resizing depth texture");
 }
 
 bool FrameBuffer::checkFBO()
@@ -346,6 +353,16 @@ void FrameBuffer::drawFullScreenQuad()
 	glDrawArrays(GL_TRIANGLES, 0, 6);
 	glBindVertexArray(GL_NONE);
 
+}
+
+unsigned FrameBuffer::getDepthWidth()
+{
+	return m_width;
+}
+
+unsigned FrameBuffer::getDepthHeight()
+{
+	return m_height;
 }
 
 std::string FrameBuffer::getTag()

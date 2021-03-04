@@ -20,7 +20,7 @@ void SkyBox::init()
 	if(!m_instance) m_instance = this;
 	m_box = m_instance->m_box;
 	if(!m_box)
-		m_box = new primitiveCube(2, 2, 2, true);
+		m_box = new PrimitiveCube(2, 2, 2, true);
 
 	glGenVertexArrays(1, &m_vaoID);
 	glGenBuffers(1, &m_vboID);

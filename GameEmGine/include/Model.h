@@ -87,8 +87,10 @@ public:
 	bool isTextureEnabled();
 	void setToRender(bool render);
 	void setTransparent(bool trans);
-	void setWireframe(bool wire);
 	bool isTransparent();
+	void setCastShadow(bool cast);
+	bool isCastingShadow();
+	void setWireframe(bool wire);
 	void print();
 	std::vector<Coord3D<>> getBounds();
 protected:
@@ -104,6 +106,7 @@ private:
 	bool m_render = true;
 	bool m_transparent = false;
 	bool m_wireframe = false;
+	bool m_shadowCast = true;
 	cstring m_tag;
 
 	std::unordered_map< std::string, Animation*>m_animations;

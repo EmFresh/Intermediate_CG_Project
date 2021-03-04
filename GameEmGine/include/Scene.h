@@ -14,12 +14,23 @@ public:
 	////shader initialization
 	//virtual void shaderInit() = 0;
 
+	/// <summary>
+	/// Called once before the scene is created
+	/// </summary>
 	virtual void init() = 0;
 
-	//updates within game loop
+	/// <summary>
+	/// updates within game loop
+	/// </summary>
+	/// <param name="dt:">time since last frame</param>
 	virtual void update(double dt) = 0;
 
-	//the post buffer will be blitted at the end of the function call to the main buffer
+	
+	/// <summary>
+	/// the post buffer will be blitted at the end of the function call to the main buffer
+	/// </summary>
+	/// <param name="gbuff:">contains the data for position, trans position, normal, trans normal, and scene colour (in that order)</param>
+	/// <param name="postBuff:">this is the buffer that will be blitted to the screen in the end</param>
 	std::function<void(FrameBuffer* gbuff, FrameBuffer* postBuff)>  customPostEffect;
 
 	void setParent(const Scene* parent) { m_parent =(Scene*) parent; };

@@ -219,17 +219,17 @@ struct PrimitivePlane:public primitiveMesh
 	}
 };
 
-struct primitiveCube: public primitiveMesh
+struct PrimitiveCube: public primitiveMesh
 {
 public:
-	primitiveCube():primitiveMesh() { type = CUBE; }
+	PrimitiveCube():primitiveMesh() { type = CUBE; }
 
-	primitiveCube(Coord3D<> dim, bool invert = false, Coord3D<> offset = {}, Coord3D<> rot = {}):primitiveMesh(dim, offset, rot)
+	PrimitiveCube(Coord3D<> dim, bool invert = false, Coord3D<> offset = {}, Coord3D<> rot = {}):primitiveMesh(dim, offset, rot)
 	{
 		type = CUBE; m_invert = invert; createMesh();
 	}
 
-	primitiveCube(float w, float h, float d = 0, bool invert = false, Coord3D<> offset = {}, Coord3D<> rot = {})
+	PrimitiveCube(float w, float h, float d = 0, bool invert = false, Coord3D<> offset = {}, Coord3D<> rot = {})
 		:primitiveMesh(w, h, d, offset, rot)
 	{
 		type = CUBE; m_invert = invert; createMesh();
@@ -244,7 +244,7 @@ public:
 	{
 		setDimentions({x,y,z},invert, offset, rot);		
 	}
-	~primitiveCube() {}
+	~PrimitiveCube() {}
 
 	void createMesh()
 	{
@@ -311,12 +311,12 @@ private:
 	bool m_invert;
 };
 
-struct primitiveSphere:public primitiveMesh
+struct PrimitiveSphere:public primitiveMesh
 {
 public:
-	primitiveSphere():primitiveMesh() { type = SPHERE; }
+	PrimitiveSphere():primitiveMesh() { type = SPHERE; }
 
-	primitiveSphere(Coord2D<> dim, int segments, int divisions, Coord3D<> offset = {}, Coord3D<> rot = {}, bool invert = false):
+	PrimitiveSphere(Coord2D<> dim, int segments, int divisions, Coord3D<> offset = {}, Coord3D<> rot = {}, bool invert = false):
 		primitiveMesh(dim, offset, rot),
 		m_segments(segments),
 		m_divisions(divisions),
@@ -325,7 +325,7 @@ public:
 		type = SPHERE; createMesh();
 	}
 
-	primitiveSphere(float w, float h, int segments, int divisions, Coord3D<> offset = {}, Coord3D<> rot = {}, bool invert = false):
+	PrimitiveSphere(float w, float h, int segments, int divisions, Coord3D<> offset = {}, Coord3D<> rot = {}, bool invert = false):
 		primitiveMesh(w, h, w, offset, rot),
 		m_segments(segments),
 		m_divisions(divisions),
@@ -334,7 +334,7 @@ public:
 		type = SPHERE;  createMesh();
 	}
 
-	~primitiveSphere() {}
+	~PrimitiveSphere() {}
 
 	void createMesh()
 	{

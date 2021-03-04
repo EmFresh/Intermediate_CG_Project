@@ -273,6 +273,7 @@ void Model::render(Shader& shader, Camera* cam)
 	{
 		if(m_wireframe)
 			glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+
 		//render the meshes
 		for(auto& a : m_meshes)
 			a->render(shader, m_useTex);
@@ -518,6 +519,16 @@ void Model::setWireframe(bool wire)
 bool Model::isTransparent()
 {
 	return m_transparent;
+}
+
+void Model::setCastShadow(bool cast)
+{
+	m_shadowCast = cast;
+}
+
+bool Model::isCastingShadow()
+{
+	return m_shadowCast;
 }
 
 void Model::boundingBoxInit()

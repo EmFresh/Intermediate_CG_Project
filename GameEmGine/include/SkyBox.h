@@ -18,7 +18,7 @@ public:
 private:
 	void init();
 
-	primitiveCube* m_box;
+	PrimitiveCube* m_box;
 	Texture3D* m_sky;
 	
 	Camera* m_camera;

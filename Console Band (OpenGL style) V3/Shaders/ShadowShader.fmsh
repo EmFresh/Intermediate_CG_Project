@@ -1,12 +1,13 @@
 #version 420 
-out vec4 FragColor;
-  
+
+out vec4 FragColor;  
 in vec2 texooord;
 
 uniform sampler2D depthMap;
+uniform mat4 lightSpaceMatrix;
 
 void main()
 {             
-    float depthValue = clamp((texture(depthMap, texooord).r - 0.995) / 0.005, 0, 1);
+    float depthValue = float(bool(texture(depthMap, texooord).r));
     FragColor = vec4(vec3(depthValue), 1.0);
 }  

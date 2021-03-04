@@ -12,7 +12,7 @@ class Test: public Scene
 
 #pragma region Variables
 
-	float speed = 20, angle = 1, bloomThresh = 0.15f;
+	float speed = 20, angle = 1, bloomThresh = 0.1f;
 	Animation ani;
 
 	Model models[10];
@@ -24,7 +24,7 @@ class Test: public Scene
 	Light lit;
 	bool moveLeft, moveRight, moveForward, moveBack, moveUp, moveDown,
 		rotLeft, rotRight, rotUp, rotDown, tiltLeft, tiltRight,
-		tab = false, lutActive = false, enableBloom = false,pause=false;
+		tab = false, lutActive = false, enableBloom = false, pause = false;
 	Shader
 		* m_lutNGrayscaleShader, * m_bloomHighPass,
 		* m_blurHorizontal, * m_blurVertical,
@@ -42,10 +42,15 @@ public:
 		Game::setBackgroundColour(.15f, .15f, .15f);
 		Game::setCameraPosition({0,0,-3});
 		FrustumPeramiters frustum{65,(float)Game::getWindowWidth() / Game::getWindowHeight(),0.001f,500};
+
 		Game::setCameraType(&frustum);
+		//	Game::setCameraType(Camera::CAM_TYPE::ORTHOGRAPHIC);
+		Game::getMainCamera()->enableFPSMode();
 
 		setSkyBox("Skyboxes/space/");
 		enableSkyBox(true);
+
+	#pragma region Init Shaders & Framebuffers 
 
 		m_bloomHighPass = ResourceManager::getShader("Shaders/Main Buffer.vtsh", "Shaders/BloomHighPass.fmsh");
 		m_blurHorizontal = ResourceManager::getShader("Shaders/Main Buffer.vtsh", "Shaders/BlurHorizontal.fmsh");
@@ -92,9 +97,9 @@ public:
 			system("pause");
 			return;
 		}
+	#pragma endregion
 
-
-
+		//Create post effects
 		customPostEffect =
 			[&](FrameBuffer* gbuff, FrameBuffer* postBuff)->void
 		{
@@ -204,43 +209,66 @@ public:
 		};
 
 
-		// Scene setup 
-		models[0].create("models/solar system/Sun/Sun.obj", "Sun");
-		models[1].create("models/solar system/Mercury/Mercury.obj", "Mercury");
-		models[2].create("models/solar system/Venus/Venus.obj", "Venus");
-		models[3].create("models/solar system/Earth/Earth.obj", "Earth");
-		models[4].create("models/solar system/Mars/Mars.obj", "Mars");
-		models[5].create("models/solar system/Jupiter/Jupiter.obj", "Jupiter");
-		models[6].create("models/solar system/Saturn/Saturn.obj", "Saturn");
-		models[7].create("models/solar system/Uranus/Uranus.obj", "Uranus");
-		models[8].create("models/solar system/Neptune/Neptune.obj", "Neptune");
+	#pragma region Scene Setup
 
-		for(int a = 0; a < 9; ++a)
-		{
-			if(a)
-				models[a].setParent(&trans[a]);
+		//models[0].create("models/solar system/Sun/Sun.obj", "Sun");
+		//models[1].create("models/solar system/Mercury/Mercury.obj", "Mercury");
+		//models[2].create("models/solar system/Venus/Venus.obj", "Venus");
+		//models[3].create("models/solar system/Earth/Earth.obj", "Earth");
+		//models[4].create("models/solar system/Mars/Mars.obj", "Mars");
+		//models[5].create("models/solar system/Jupiter/Jupiter.obj", "Jupiter");
+		//models[6].create("models/solar system/Saturn/Saturn.obj", "Saturn");
+		//models[7].create("models/solar system/Uranus/Uranus.obj", "Uranus");
+		//models[8].create("models/solar system/Neptune/Neptune.obj", "Neptune");
+		//
+		//for(int a = 0; a < 9; ++a)
+		//{
+		//	if(a)
+		//		models[a].setParent(&trans[a]);
+		//
+		//	Game::addModel(&models[a]);
+		//	models[a].setScale(.1f);
+		//	models[a].translateBy({25.f * a,0,0});
+		//}
+		//models[1].scaleBy(.2f);
+		//models[2].scaleBy(.2f);
+		//models[3].scaleBy(.2f);
+		//models[4].scaleBy(.2f);
+		//models[5].scaleBy(.8f);
+		//models[6].scaleBy(.7f);
+		//models[7].scaleBy(.5f);
+		//models[8].scaleBy(.4f);
+		//
+		////(161.874771, 74.611961, 82.858345)
+		//Game::setCameraPosition({161.874771f, 74.611961f, -82.858345f});
+		//Game::getMainCamera()->enableFPSMode();
 
-			Game::addModel(&models[a]);
-			models[a].setScale(.1f);
-			models[a].translateBy({25.f * a,0,0});
-		}
-		models[1].scaleBy(.2f);
-		models[2].scaleBy(.2f);
-		models[3].scaleBy(.2f);
-		models[4].scaleBy(.2f);
-		models[5].scaleBy(.8f);
-		models[6].scaleBy(.7f);
-		models[7].scaleBy(.5f);
-		models[8].scaleBy(.4f);
 
-		//(161.874771, 74.611961, 82.858345)
-		Game::setCameraPosition({161.874771f, 74.611961f, -82.858345f});
-		Game::getMainCamera()->enableFPSMode();
+		models[0].create("Models/rocket-ship/rocket ship.obj", "ship");
+		Game::addModel(&models[0]);
 
-		lit.setLightType(Light::TYPE::POINT);
+		models[1].create(new PrimitivePlane(Coord3D<>{50, 0, 50}*5), "moon");		
+		models[1].replaceTexture(0, 0, ResourceManager::getTexture2D("Textures/moon.jpg").id);
+		Game::addModel(&models[1]);
+
+		models[2].create(new PrimitiveCube({10,10,10}, false, {0,15,0}), "trans Box");
+		models[2].setColour(0, .5f, 0, .75f);
+		models[2].translate(5, 10, 3);
+		models[2].rotate(40, 106, 33);
+
+		//models[2].setTransparent(true);
+		Game::addModel(&models[2]);
+
+		lit.setLightType(Light::TYPE::DIRECTIONAL);
 		lit.setParent(Game::getMainCamera());
 		lit.setDiffuse({155,0,0});
 		LightManager::addLight(&lit);
+
+		//static Light tester;
+		//tester.setLightType(Light::TYPE::DIRECTIONAL);
+		//tester.rotate({45,-90,0});
+		//LightManager::addLight(&tester);
+	#pragma endregion
 
 
 		//Key binds
@@ -281,7 +309,6 @@ public:
 				//lutActive = false;
 				break;
 
-
 			case GLFW_KEY_6:
 				for(int a = 0; a < 9; ++a)
 				{
@@ -291,14 +318,14 @@ public:
 					else
 						models[a].setColour(.35f, 0, .45f);
 				}
-
-
+				break;
 			case GLFW_KEY_KP_4:
-				bloomThresh -= .05;
+				bloomThresh -= .1;
+				if(bloomThresh < 0)bloomThresh = 0;
 				break;
 
 			case GLFW_KEY_KP_6:
-				bloomThresh += .05;
+				bloomThresh += .1;
 				break;
 
 			case GLFW_KEY_COMMA:
@@ -321,7 +348,7 @@ public:
 				rocket.setWireframe(frame = !frame);
 			if(key == GLFW_KEY_SPACE)
 				pause = !pause;
-				//enableSkyBox(sky = !sky);
+			//enableSkyBox(sky = !sky);
 
 			if(key == GLFW_KEY_F5)
 				Shader::refresh();
@@ -415,10 +442,10 @@ public:
 			puts(Game::getMainCamera()->getPosition().toString());
 		};
 
-		EmGineAudioPlayer::createAudioStream("songs/still alive.mp3");
-		EmGineAudioPlayer::getAudioControl()[0][0]->channel->set3DMinMaxDistance(20, 200);
-
-		EmGineAudioPlayer::play(true);
+		//EmGineAudioPlayer::createAudioStream("songs/still alive.mp3");
+		//EmGineAudioPlayer::getAudioControl()[0][0]->channel->set3DMinMaxDistance(20, 200);
+		//
+		//EmGineAudioPlayer::play(true);
 	}
 
 	void cameraMovement(float dt)
@@ -486,30 +513,30 @@ public:
 		cameraMovement(dt);
 		float maxSpeed = 10;
 
-		if(!pause)
-		{
+		//if(!pause)
+		//{
+		//
+		//	trans[1].rotateBy({0,maxSpeed * 1.0f * (float)dt,0});
+		//	trans[2].rotateBy({0,maxSpeed * 0.9f * (float)dt,0});
+		//	trans[3].rotateBy({0,maxSpeed * 0.8f * (float)dt,0});
+		//	trans[4].rotateBy({0,maxSpeed * 0.7f * (float)dt,0});
+		//	trans[5].rotateBy({0,maxSpeed * 0.6f * (float)dt,0});
+		//	trans[6].rotateBy({0,maxSpeed * 0.5f * (float)dt,0});
+		//	trans[7].rotateBy({0,maxSpeed * 0.4f * (float)dt,0});
+		//	trans[8].rotateBy({0,maxSpeed * 0.3f * (float)dt,0});
+		//	for(int a = 0; a < 9; ++a)
+		//		models[a].rotateBy(0, (10 - a) * 5 * dt, 0);
+		//}
 
-		trans[1].rotateBy({0,maxSpeed * 1.0f * (float)dt,0});
-		trans[2].rotateBy({0,maxSpeed * 0.9f * (float)dt,0});
-		trans[3].rotateBy({0,maxSpeed * 0.8f * (float)dt,0});
-		trans[4].rotateBy({0,maxSpeed * 0.7f * (float)dt,0});
-		trans[5].rotateBy({0,maxSpeed * 0.6f * (float)dt,0});
-		trans[6].rotateBy({0,maxSpeed * 0.5f * (float)dt,0});
-		trans[7].rotateBy({0,maxSpeed * 0.4f * (float)dt,0});
-		trans[8].rotateBy({0,maxSpeed * 0.3f * (float)dt,0});
-		for(int a = 0; a < 9; ++a)
-			models[a].rotateBy(0, (10 - a) * 5 * dt, 0);
-		}
-
-		auto tmpOBJPos = models[0].getPosition();
-		EmGineAudioPlayer::getAudioControl()[0][0]->listener->pos = *(FMOD_VEC3*)&tmpOBJPos;
-		
-		auto tmpPos = Game::getMainCamera()->getPosition();
-		auto tmpUp = Game::getMainCamera()->getUp();
-		auto tmpForward = Game::getMainCamera()->getForward();
-		EmGineAudioPlayer::getAudioSystem()->set3DListenerAttributes(0, (FMOD_VEC3*)&tmpPos, nullptr,(FMOD_VEC3*)&tmpForward, (FMOD_VEC3*)&tmpUp);
-
-		EmGineAudioPlayer::update();
+		//auto tmpOBJPos = models[0].getPosition();
+		//EmGineAudioPlayer::getAudioControl()[0][0]->listener->pos = *(FMOD_VEC3*)&tmpOBJPos;
+		//
+		//auto tmpPos = Game::getMainCamera()->getPosition();
+		//auto tmpUp = Game::getMainCamera()->getUp();
+		//auto tmpForward = Game::getMainCamera()->getForward();
+		//EmGineAudioPlayer::getAudioSystem()->set3DListenerAttributes(0, (FMOD_VEC3*)&tmpPos, nullptr, (FMOD_VEC3*)&tmpForward, (FMOD_VEC3*)&tmpUp);
+		//
+		//EmGineAudioPlayer::update();
 
 
 	}
@@ -517,7 +544,7 @@ public:
 
 int main()
 {
-	Game::init("Assignment 1", 1900, 1060);
+	Game::init("Midterm", 1900, 1060);
 
 	Test test;
 	//Song song;//just another scene... move along

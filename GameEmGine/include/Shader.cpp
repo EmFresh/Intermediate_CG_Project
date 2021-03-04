@@ -235,8 +235,8 @@ bool Shader::linkShaders()
 		m_programID = m_vertID = m_fragID = 0;
 
 		// Use the infoLog as you see fit.
-		printf("Error in shader %s or %s\n",m_vtPath.c_str(),m_fmPath.c_str());
-		printf(infoLog);
+		printf("Could not link shaders \"%s\" and \"%s\"\n",m_vtPath.c_str(),m_fmPath.c_str());
+		puts(infoLog);
 		puts("\n");
 		delete[] infoLog;
 

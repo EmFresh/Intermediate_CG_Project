@@ -28,7 +28,7 @@ public:
 	//binds objects to frame buffer/s
 	void enable();
 
-	//binds the frame buffer to the default spot
+	//binds the frame buffer to the default location
 	static void disable();
 
 
@@ -60,6 +60,10 @@ public:
 	GLuint getFrameBufferID();
 
 	static void drawFullScreenQuad();
+
+	unsigned getDepthWidth();
+	unsigned getDepthHeight();
+
 
 	std::string getTag();
 	unsigned getLayer();

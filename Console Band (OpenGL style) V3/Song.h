@@ -97,7 +97,7 @@ class Song:public Scene
 
 		AudioPlayer::playAll();
 
-		AudioPlayer::setMasterVolume(.1f);
+		AudioPlayer::setMasterVolume(.05f);
 		if(AudioPlayer::size())
 			incriment = (float)AudioPlayer::getPosition(0);
 		start = true;
@@ -105,7 +105,7 @@ class Song:public Scene
 
 #pragma region File I/O
 
-	void openSong(string songFolder = "songs/QUEEN - BOHEMIAN RHAPSODY/")
+	void openSong(string songFolder = "songs/TTFAF/")
 	{
 
 		smf::MidiFile file;

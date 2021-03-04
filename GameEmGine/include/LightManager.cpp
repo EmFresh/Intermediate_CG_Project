@@ -1,13 +1,15 @@
 #define _USE_MATH_DEFINES
 #include <cmath>
 #include "LightManager.h"
-#pragma region Static Variables
-std::vector<Light*>LightManager::m_lights;
-FrameBuffer* LightManager::m_framebuffer;
-std::vector<std::vector<FrameBuffer*>>LightManager::m_shadows;
+#include "WindowCreator.h"
 
-Shader* LightManager::m_shader;
-Camera* LightManager::m_cam;
+#pragma region Static Variables
+std::vector<Light*> m_lights;
+FrameBuffer* m_framebuffer;
+FrameBuffer* m_shadows;
+
+Shader* m_shader;
+Camera* m_cam;
 //LightInfo LightSource::m_info;
 //unsigned LightSource::m_size;
 #pragma endregion
@@ -51,78 +53,131 @@ void LightManager::setShader(Shader* shad)
 	m_shader = shad;
 }
 
-std::vector<FrameBuffer*> LightManager::shadowBuffers(unsigned w, unsigned h, std::unordered_map<void*, Model*>& models, unsigned index)
+void LightManager::shadowRender(unsigned w, unsigned h, FrameBuffer* to, GLuint pos, std::unordered_map<void*, Model*>& models)
 {
+	static Camera cam(Camera::ORTHOGRAPHIC, {(float)80,(float)80,70});
+	static glm::mat4 lsm(1);
 
-	if(m_lights[index]->type == Light::TYPE::POINT)
+
+
+	glViewport(0, 0, w, h);
+	for(uint index = 0; index < m_lights.size(); ++index)
 	{
+		if(!m_lights[index]->shadowEnable)continue;
 
-		glViewport(0, 0, w, h);
-
-
-		static Camera cam;
-		cam.init({(float)w,(float)h,500}, Camera::ORTHOGRAPHIC);
-
-		cam.translate(m_lights[index]->getPosition());
-
-		for(int a = 0; a < 6; a++)
+		if(m_lights[index]->type == Light::TYPE::DIRECTIONAL)
 		{
-			//	m_shadows[index][a]->resizeColour(0, w, h);
-			m_shadows[index][a]->resizeDepth(w, h);
 
-			m_shadows[index][a]->enable();
-			//m_shader->enable();
-			Shader* shad = ResourceManager::getShader("Shaders/ShadowDepth.vtsh", "Shaders/ShadowDepth.fmsh");
-			shad->enable();
-			shad->sendUniform("lightSpaceMatrix", m_cam->getProjectionMatrix() * glm::lookAt(m_lights[index]->getPosition().toVec3(),
-							  glm::vec3(0.0f, 0.0f, 0.0f),
-							  glm::vec3(0.0f, 1.0f, 0.0f)));
+			cam.translate(-m_lights[index]->getPosition());
 
-
-
-			switch(a)
+			//initialize shadow buffer
+			if(!m_shadows)
 			{
-			case 0:
-				cam.rotate(90 * Coord3D<>{1, 0, 0});
-				break;
-			case 1:
-				cam.rotate(90 * Coord3D<>{-1, 0, 0});
-				break;
-			case 2:
-				cam.rotate(90 * Coord3D<>{0, 1, 0});
-				break;
-			case 3:
-				cam.rotate(90 * Coord3D<> {0, -1, 0});
-				break;
-			case 4:
-				cam.rotate({0, 0, 0});
-				break;
-			case 5:
-				cam.rotate(180 * Coord3D<>{0, -1, 0});
-
-				break;
-			default:
-				break;
+				m_shadows = new FrameBuffer(0, "shadow buffer");
+				m_shadows->initDepthTexture(w, h);
+				if(!m_shadows->checkFBO())
+				{
+					puts("shadow buffer fbo not init.");
+					system("pause");
+					return;
+				}
 			}
 
+			Shader* shad = ResourceManager::getShader("Shaders/ShadowDepth.vtsh", "Shaders/ShadowDepth.fmsh");
+			m_shadows->resizeDepth(w, h);
+			m_shadows->clear();
+
+			shad->enable();
+			shad->sendUniform("lightSpaceMatrix", lsm =
+							  cam.getProjectionMatrix() *
+							  glm::lookAt(glm::vec3(m_lights[index]->getWorldRotationMatrix() *
+							  glm::vec4(m_lights[index]->getForward().toVec3(), 1))
+							  * glm::vec3{40,40,70}, glm::vec3(), glm::vec3(0, 1, 0)));
+			shad->disable();
+
+			// use this later
+			for(int a = 0; a < 6; a++)
+			{
 
 
-			cam.render(shad, models);
+				//	switch(a)
+				//	{
+				//	case 0:
+				//		cam.rotate(90 * Coord3D<>{1, 0, 0});
+				//		break;
+				//	case 1:
+				//		cam.rotate(90 * Coord3D<>{-1, 0, 0});
+				//		break;
+				//	case 2:
+				//		cam.rotate(90 * Coord3D<>{0, 1, 0});
+				//		break;
+				//	case 3:
+				//		cam.rotate(90 * Coord3D<> {0, -1, 0});
+				//		break;
+				//	case 4:
+				//		cam.rotate({0, 0, 0});
+				//		break;
+				//	case 5:
+				//		cam.rotate(180 * Coord3D<>{0, -1, 0});
+				//		break;
+				//	}
 
-			//Shader* shad = ResourceManager::getShader("Shaders/ShadowShader.vtsh", "Shaders/ShadowShader.frag");
-			//shad->enable();
-			//shad->sendUniform("depthMap", 0);
-			//glActiveTexture(GL_TEXTURE0);
-			//glBindTexture(GL_TEXTURE_2D, m_shadows[index][a]->getDepthHandle());
-			//FrameBuffer::drawFullScreenQuad();
-			//glActiveTexture(GL_TEXTURE0);
-			//glBindTexture(GL_TEXTURE_2D, GL_NONE);
-			FrameBuffer::disable();
+
+
+
+					//Shader* shad = ResourceManager::getShader("Shaders/ShadowShader.vtsh", "Shaders/ShadowShader.frag");
+					//shad->enable();
+					//shad->sendUniform("depthMap", 0);
+					//glActiveTexture(GL_TEXTURE0);
+					//glBindTexture(GL_TEXTURE_2D, m_shadows[index][a]->getDepthHandle());
+					//FrameBuffer::drawFullScreenQuad();
+					//glActiveTexture(GL_TEXTURE0);
+					//glBindTexture(GL_TEXTURE_2D, GL_NONE);
+			}
+
+			//get shadow view
+			m_shadows->enable();
+			cam.render(shad, models,false,true);
+			m_shadows->disable();
+
+
+			//render shadow 
+			glViewport(0, 0, WindowCreator::getScreenWidth(), WindowCreator::getScreenHeight());
+
+			to->moveDepthToBackBuffer(to->getDepthWidth(), to->getDepthHeight());
+			to->enable();
+			glClear(GL_DEPTH_BUFFER_BIT);
+
+			Shader* m_shadowCompShader = ResourceManager::getShader("shaders/Main Buffer.vtsh", "shaders/Shadow Composite.fmsh");
+
+			m_shadowCompShader->enable();
+			m_shadowCompShader->sendUniform("uScene", 0);
+			m_shadowCompShader->sendUniform("uPosition", 1);
+			m_shadowCompShader->sendUniform("uShadow", 2);
+			m_shadowCompShader->sendUniform("uLightViewProj", lsm);
+			m_shadowCompShader->sendUniform("uShadowEnable", true);
+
+			glActiveTexture(GL_TEXTURE0);
+			glBindTexture(GL_TEXTURE_2D, to->getColorHandle(0));
+			glActiveTexture(GL_TEXTURE1);
+			glBindTexture(GL_TEXTURE_2D, pos);
+			glActiveTexture(GL_TEXTURE2);
+			glBindTexture(GL_TEXTURE_2D, m_shadows->getDepthHandle());
+
+			FrameBuffer::drawFullScreenQuad();
+
+			//un-bind textures
+			for(int a = 0; a < 3; ++a)
+				glActiveTexture(GL_TEXTURE0 + a),
+				glBindTexture(GL_TEXTURE_2D, GL_NONE);
+
+			m_shadowCompShader->disable();
+			to->disable();
+			to->takeFromBackBufferDepth(to->getDepthWidth(), to->getDepthHeight());
+
 		}
 
-		//m_shader->disable();
 	}
-	return m_shadows[index];
 }
 
 void LightManager::update()

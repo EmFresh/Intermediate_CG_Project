@@ -9,7 +9,7 @@ Camera::Camera(CAM_TYPE type, Coord3D<> size)
 Camera::Camera(ProjectionPeramiters* peram, Coord3D<> size)
 	: Transformer("CAMERA"), m_scale(1), m_projMat(1), m_viewMat(1), m_cameraUpdate(true)
 {
-	init(size, CAM_TYPE::NONE, peram);
+	init(size, peram ? peram->type : CAM_TYPE::NONE, peram);
 }
 
 Camera::~Camera()
@@ -40,7 +40,7 @@ void Camera::setType(CAM_TYPE type, ProjectionPeramiters* peram)
 	{
 	case ORTHOGRAPHIC:
 		if(!peram)
-			m_projMat = glm::ortho(-m_size.width, m_size.width, -m_size.height, m_size.height, -m_size.depth, m_size.depth);
+			m_projMat = glm::ortho(-m_size.width * .5f, m_size.width * .5f, -m_size.height * .5f, m_size.height * .5f, 0.f, m_size.depth);
 		else
 			m_projMat = glm::ortho(peram1->left, peram1->right, peram1->bottom, peram1->top, peram1->zNear, peram1->zFar);
 
@@ -242,7 +242,7 @@ glm::mat4 Camera::getWorldTransformation()
 
 
 #include <algorithm>
-void Camera::render(Shader* shader, std::unordered_map<void*, Model*>& models, bool trans)
+void Camera::render(Shader* shader, std::unordered_map<void*, Model*>& models, bool trans,bool shadow)
 {
 
 	std::vector<std::pair<void*, Model*>> models2(models.begin(), models.end());
@@ -255,9 +255,12 @@ void Camera::render(Shader* shader, std::unordered_map<void*, Model*>& models, b
 			(a.second->getPosition() - tmpCam->getPosition()).distanceSquare();
 	});
 
-	shader->enable();
-	shader->sendUniform("isTrans", trans);
-	shader->disable();
+	if(shader)
+	{
+		shader->enable();
+		shader->sendUniform("isTrans", trans);
+		shader->disable();
+	}
 
 	Shader* shader2 = ResourceManager::getShader("shaders/freetype.vtsh", "shaders/freetype.fmsh");
 	for(auto& a : models2)
@@ -267,11 +270,14 @@ void Camera::render(Shader* shader, std::unordered_map<void*, Model*>& models, b
 			if(trans == tmp->isTransparent())
 				tmp->render(*shader2, this);
 		}
-		else//if(a.second->getType() == "MODEL")
+		else//if(a.second->getCompType() == "MODEL")
 		{
-			if(!cull(a.second))
-				if(trans == a.second->isTransparent())
-					a.second->render(*shader, this);
+			if(shadow)
+				if(!a.second->isCastingShadow())continue;
+			if(shader)
+				if(!cull(a.second))
+					if(trans == a.second->isTransparent())
+						a.second->render(*shader, this);
 		}
 
 }

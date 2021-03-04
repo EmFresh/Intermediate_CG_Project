@@ -1,0 +1,40 @@
+#version 420
+
+uniform sampler2D uScene;
+uniform sampler2D uPosition;
+uniform sampler2D uShadow; 
+uniform mat4 uLightViewProj;
+uniform bool uShadowEnable = true;
+
+in vec2 texcoord;
+out vec4 outColour;
+
+float calculateShadow()
+{
+    vec4 fragPosLightSpace = uLightViewProj * texture(uPosition, texcoord);
+
+    vec3 projCoord = fragPosLightSpace.xyz/fragPosLightSpace.w;
+    projCoord = projCoord * 0.5 + 0.5;
+
+    float closestDepth = texture(uShadow, projCoord.xy).r;
+    float currentDepth = projCoord.z;
+    float bias =.01;
+
+    if(
+     !bool(length(texture(uPosition, texcoord).xyz))||
+    closestDepth == 1) 
+    return 1;//errors occur 
+  
+    // int(!bool(length(texture(uPosition, texcoord).xyz)));
+    return (currentDepth - bias > closestDepth ? 0 : 1) ;
+}
+
+void main()
+{
+    float shadow = calculateShadow();
+    vec3 colourA = texture(uScene,texcoord).rgb;
+    vec3 colourB = vec3(shadow) * int(uShadowEnable);
+
+    outColour.rgb = colourA * colourB;
+    outColour.a = 1.0;
+}

@@ -152,8 +152,7 @@ private:
 
 
 
-	static Shader* m_gBufferShader, * m_postProcess, * m_forwardRender, * m_shadows;
-
+	
 	//static GLuint colorCustom;
 	//static int LUTsize;
 };

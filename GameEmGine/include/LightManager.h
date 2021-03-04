@@ -62,6 +62,7 @@ struct Light:public Transformer
 		attenuationQuadratic = .01f;
 
 	bool lightEnable = true;
+	bool shadowEnable = true;
 	bool ambiantEnable = true;
 	bool diffuseEnable = true;
 	bool specularEnable = true;
@@ -85,19 +86,15 @@ public:
 
 	static void setShader(Shader* shad);
 
-	static std::vector<FrameBuffer*> shadowBuffers(unsigned w, unsigned h, std::unordered_map<void*, Model*>&, unsigned index);
 
 	static void setFramebuffer(FrameBuffer* buff);
 
+	static void shadowRender(unsigned w, unsigned h, FrameBuffer* to,GLuint positionID, std::unordered_map<void*, Model*>&);
+	//Updates and renders each light
 	static void update();
 	static void clear();
 private:
 
-	static std::vector<Light*> m_lights;
-	static FrameBuffer* m_framebuffer;
-	static std::vector<std::vector<FrameBuffer*>>m_shadows;
 
-	static Shader* m_shader;
-	static Camera* m_cam;
 };
 
