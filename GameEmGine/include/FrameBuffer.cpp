@@ -165,8 +165,9 @@ void FrameBuffer::setClearColour(ColourRGBA col)
 	setClearColour(col.r * TO_BYTE_MULTI, col.g * TO_BYTE_MULTI, col.b * TO_BYTE_MULTI, col.a * TO_BYTE_MULTI);
 }
 
-void FrameBuffer::setClearColour(float r, float g, float b, float a)
+void FrameBuffer::setClearColour(GLclampf r, GLclampf g, GLclampf b, GLclampf a)
 {
+	
 	glClearColor(r, g, b, a);//BG colour
 }
 

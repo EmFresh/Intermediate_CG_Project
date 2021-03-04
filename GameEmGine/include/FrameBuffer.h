@@ -12,6 +12,15 @@ public:
 	FrameBuffer(unsigned numColorAttachments, std::string tag = "");
 	~FrameBuffer();
 
+	/// <summary>
+	/// 
+	/// </summary>
+	/// <param name="index"></param>
+	/// <param name="width"></param>
+	/// <param name="height"></param>
+	/// <param name="internalFormat"></param>
+	/// <param name="filter"></param>
+	/// <param name="wrap"></param>
 	void initColourTexture(unsigned index, unsigned width, unsigned height, GLint internalFormat = GL_RGBA8, GLint filter = GL_LINEAR, GLint wrap = GL_CLAMP_TO_EDGE);
 	void initDepthTexture(unsigned width, unsigned height);
 	void resizeColour(unsigned index, unsigned width, unsigned height, GLint internalFormat = GL_RGBA8, GLint filter = GL_LINEAR, GLint wrap = GL_CLAMP_TO_EDGE);
@@ -22,11 +31,23 @@ public:
 	// Clears all OpenGL memory
 	void unload();
 
-	// Set Clear Colour for the next clear calls
-	static void setClearColour(ColourRGBA = {});
-	static void setClearColour(float r, float g, float b, float a);
+	
+	/// <summary>
+	/// Set Clear Colour for the next clear calls
+	/// </summary>
+	/// <param name="colour"></param>
+	static void setClearColour(ColourRGBA colour= {});
+	/// <summary>
+	/// Set Clear Colour for the next clear calls. Values range 0 -> 1 (inclusive)
+	/// </summary>
+	/// <param name="r">red channel</param>
+	/// <param name="g">green channel</param>
+	/// <param name="b">blue channel</param>
+	/// <param name="a">alpha channel</param>
+	static void setClearColour(GLclampf r, GLclampf g, GLclampf b, GLclampf a);
 	// Clears all attached textures
 	void clear(GLbitfield =0);
+
 	static void clearBackBuffer(bool clearCol = true, bool clearDep = true);
 	//binds objects to frame buffer/s
 	void enable();
@@ -36,11 +57,11 @@ public:
 
 
 	///~ Helper Functions ~///
+	
+
 	void setViewport(int x, int y, int width, int height)const;
 
 	void moveColourToBackBuffer(int windowWidth, int windowHeight, uint from = 0);
-
-	//void moveColourToBuffer(int windowWidth, int windowHeight, GLuint fboID);
 
 	void moveColourToBuffer(int windowWidth, int windowHeight, FrameBuffer* fboID, uint from, uint to);
 

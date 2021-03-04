@@ -549,7 +549,7 @@ void GameEmGine::update()
 	}
 
 	//Apply shadows
-	LightManager::shadowRender(1024, 1024, m_postBuffer, m_gBuffer->getColorHandle(0), m_models);
+	LightManager::shadowRender(1024, 1024, m_postBuffer, m_gBuffer, m_models);
 	//glViewport(0, 0, getWindowWidth(), getWindowHeight());
 
 	//post effects

@@ -53,7 +53,7 @@ void LightManager::setShader(Shader* shad)
 	m_shader = shad;
 }
 
-void LightManager::shadowRender(unsigned w, unsigned h, FrameBuffer* to, GLuint pos, std::unordered_map<void*, Model*>& models)
+void LightManager::shadowRender(unsigned w, unsigned h, FrameBuffer* to, FrameBuffer* gBuff, std::unordered_map<void*, Model*>& models)
 {
 	static Camera cam(Camera::ORTHOGRAPHIC, {(float)80,(float)80,70});
 	static glm::mat4 lsm(1);
@@ -61,14 +61,14 @@ void LightManager::shadowRender(unsigned w, unsigned h, FrameBuffer* to, GLuint 
 
 
 	glViewport(0, 0, w, h);
-	for(uint index = 0; index < m_lights.size(); ++index)
+	for(uint a = 0; a < m_lights.size(); ++a)
 	{
-		if(!m_lights[index]->shadowEnable)continue;
+		if(!m_lights[a]->shadowEnable)continue;
 
-		if(m_lights[index]->type == Light::TYPE::DIRECTIONAL)
+		if(m_lights[a]->type == Light::TYPE::DIRECTIONAL)
 		{
 
-			cam.translate(-m_lights[index]->getPosition());
+			cam.translate(-m_lights[a]->getPosition());
 
 			//initialize shadow buffer
 			if(!m_shadows)
@@ -90,17 +90,17 @@ void LightManager::shadowRender(unsigned w, unsigned h, FrameBuffer* to, GLuint 
 			shad->enable();
 			shad->sendUniform("lightSpaceMatrix", lsm =
 							  cam.getProjectionMatrix() *
-							  glm::lookAt(glm::vec3(m_lights[index]->getWorldRotationMatrix() *
-							  glm::vec4(m_lights[index]->getForward().toVec3(), 1))
+							  glm::lookAt(glm::vec3(m_lights[a]->getWorldRotationMatrix() *
+							  glm::vec4(m_lights[a]->getForward().toVec3(), 1))
 							  * glm::vec3{40,40,70}, glm::vec3(), glm::vec3(0, 1, 0)));
 			shad->disable();
 
-			// use this later
-			for(int a = 0; a < 6; a++)
+			// use this for point lights
+			for(int b = 0; b < 6; b++)
 			{
 
 
-				//	switch(a)
+				//	switch(b)
 				//	{
 				//	case 0:
 				//		cam.rotate(90 * Coord3D<>{1, 0, 0});
@@ -121,24 +121,12 @@ void LightManager::shadowRender(unsigned w, unsigned h, FrameBuffer* to, GLuint 
 				//		cam.rotate(180 * Coord3D<>{0, -1, 0});
 				//		break;
 				//	}
-
-
-
-
-					//Shader* shad = ResourceManager::getShader("Shaders/ShadowShader.vtsh", "Shaders/ShadowShader.frag");
-					//shad->enable();
-					//shad->sendUniform("depthMap", 0);
-					//glActiveTexture(GL_TEXTURE0);
-					//glBindTexture(GL_TEXTURE_2D, m_shadows[index][a]->getDepthHandle());
-					//FrameBuffer::drawFullScreenQuad();
-					//glActiveTexture(GL_TEXTURE0);
-					//glBindTexture(GL_TEXTURE_2D, GL_NONE);
 			}
 
 			//get shadow view
 			glCullFace(GL_FRONT);
 			m_shadows->enable();
-			cam.render(shad, models,false,true);
+			cam.render(shad, models, false, true);
 			m_shadows->disable();
 			glCullFace(GL_BACK);
 
@@ -151,26 +139,33 @@ void LightManager::shadowRender(unsigned w, unsigned h, FrameBuffer* to, GLuint 
 			glClear(GL_DEPTH_BUFFER_BIT);
 
 			Shader* m_shadowCompShader = ResourceManager::getShader("shaders/Main Buffer.vtsh", "shaders/Shadow Composite.fmsh");
+			
+			glm::vec4 dir(0, 0, 1, 1.0f);
+			dir = m_lights[a]->getWorldRotationMatrix() * (m_lights[a]->getLocalRotationMatrix() * dir);
 
 			m_shadowCompShader->enable();
 			m_shadowCompShader->sendUniform("uScene", 0);
 			m_shadowCompShader->sendUniform("uPosition", 1);
-			m_shadowCompShader->sendUniform("uShadow", 2);
+			m_shadowCompShader->sendUniform("uNormOP", 2);
+			m_shadowCompShader->sendUniform("uShadow", 3);
+			m_shadowCompShader->sendUniform("uLightDirection",dir);
 			m_shadowCompShader->sendUniform("uLightViewProj", lsm);
 			m_shadowCompShader->sendUniform("uShadowEnable", true);
 
 			glActiveTexture(GL_TEXTURE0);
 			glBindTexture(GL_TEXTURE_2D, to->getColorHandle(0));
 			glActiveTexture(GL_TEXTURE1);
-			glBindTexture(GL_TEXTURE_2D, pos);
+			glBindTexture(GL_TEXTURE_2D, gBuff->getColorHandle(0));
 			glActiveTexture(GL_TEXTURE2);
+			glBindTexture(GL_TEXTURE_2D, gBuff->getColorHandle(2));
+			glActiveTexture(GL_TEXTURE3);
 			glBindTexture(GL_TEXTURE_2D, m_shadows->getDepthHandle());
 
 			FrameBuffer::drawFullScreenQuad();
 
 			//un-bind textures
-			for(int a = 0; a < 3; ++a)
-				glActiveTexture(GL_TEXTURE0 + a),
+			for(int b = 0; b < 4; ++b)
+				glActiveTexture(GL_TEXTURE0 + b),
 				glBindTexture(GL_TEXTURE_2D, GL_NONE);
 
 			m_shadowCompShader->disable();

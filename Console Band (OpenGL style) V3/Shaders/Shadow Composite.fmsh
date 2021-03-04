@@ -2,8 +2,10 @@
 
 uniform sampler2D uScene;
 uniform sampler2D uPosition;
+uniform sampler2D uNormOP;
 uniform sampler2D uShadow; 
 uniform mat4 uLightViewProj;
+uniform vec4 uLightDirection;
 uniform bool uShadowEnable = true;
 uniform float uOpacity = 0.5;
 
@@ -17,9 +19,11 @@ float calculateShadow()
     vec3 projCoord = fragPosLightSpace.xyz/fragPosLightSpace.w;
     projCoord = projCoord * 0.5 + 0.5;
 
+    vec3 norm = texture(uNormOP, texcoord).xyz;
+
     float closestDepth = texture(uShadow, projCoord.xy).r;
     float currentDepth = projCoord.z;
-    float bias =.01;
+    float bias = max(0.01 * (1 - dot(norm, uLightDirection.xyz)), 0.005);
 
     if(
      !bool(length(texture(uPosition, texcoord).xyz))||

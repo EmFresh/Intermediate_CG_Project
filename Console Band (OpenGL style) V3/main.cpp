@@ -47,7 +47,7 @@ public:
 		//	Game::setCameraType(Camera::CAM_TYPE::ORTHOGRAPHIC);
 		Game::getMainCamera()->enableFPSMode();
 
-		setSkyBox("Skyboxes/space/");
+		setSkyBox("Skyboxes/skybox/");
 		enableSkyBox(true);
 
 	#pragma region Init Shaders & Framebuffers 

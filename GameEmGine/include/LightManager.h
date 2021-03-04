@@ -89,7 +89,7 @@ public:
 
 	static void setFramebuffer(FrameBuffer* buff);
 
-	static void shadowRender(unsigned w, unsigned h, FrameBuffer* to,GLuint positionID, std::unordered_map<void*, Model*>&);
+	static void shadowRender(unsigned w, unsigned h, FrameBuffer* to,FrameBuffer* gBuffer, std::unordered_map<void*, Model*>&);
 	//Updates and renders each light
 	static void update();
 	static void clear();
