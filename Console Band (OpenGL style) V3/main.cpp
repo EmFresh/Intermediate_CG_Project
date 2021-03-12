@@ -542,13 +542,323 @@ public:
 	}
 };
 
+class BaseTower : public Model
+{
+public:
+	BaseTower() :Model() {};
+	BaseTower(Model& model) :Model(model){}
+	BaseTower(Model& model, cstring tag = "") :Model(model,tag){}
+	BaseTower(primitiveMesh* model, cstring tag = ""):Model(model,tag) {}
+	BaseTower(cstring path, cstring tag = ""):Model(path,tag) {}
+	 void init() {
+	 }
+	void update(double dt) {
+
+
+	}
+
+};
+class Point : public Model
+{
+public:
+	Point() :Model() {};
+	Point(Model& model) :Model(model) {}
+	Point(Model& model, cstring tag = "") :Model(model, tag) {}
+	Point(primitiveMesh* model, cstring tag = "") :Model(model, tag) {}
+	Point(cstring path, cstring tag = "") :Model(path, tag) {}
+	void init() {
+	}
+	void update(double dt) {
+
+
+	}
+
+};
+
+
+class OtherTower : public Model
+{
+public:
+	OtherTower() :Model() {};
+	OtherTower(Model& model) :Model(model) {}
+	OtherTower(Model& model, cstring tag = "") :Model(model, tag) {}
+	OtherTower(primitiveMesh* model, cstring tag = "") :Model(model, tag) {}
+	OtherTower(cstring path, cstring tag = "") :Model(path, tag) {}
+	void init() {
+	}
+	void update(double dt) {
+
+
+	}
+
+};
+
+class BaseEnemy : public Model
+{
+public:
+	BaseEnemy() :Model() {};
+	BaseEnemy(Model& model) :Model(model) {}
+	BaseEnemy(Model& model, cstring tag = "") :Model(model, tag) {}
+	BaseEnemy(primitiveMesh* model, cstring tag = "") :Model(model, tag) {}
+	BaseEnemy(cstring path, cstring tag = "") :Model(path, tag) {}
+	void init() {
+	}
+	void update(double dt) {
+
+
+	}
+
+};
+
+class OtherEnemy : public Model
+{
+public:
+	OtherEnemy() :Model() {};
+	OtherEnemy(Model& model) :Model(model) {}
+	OtherEnemy(Model& model, cstring tag = "") :Model(model, tag) {}
+	OtherEnemy(primitiveMesh* model, cstring tag = "") :Model(model, tag) {}
+	OtherEnemy(cstring path, cstring tag = "") :Model(path, tag) {}
+	void init() {
+	}
+	void update(double dt) {
+
+
+	}
+
+};
+
+class GDWGAME : public Scene {
+
+	#pragma region Variables
+
+
+	float speed = 20, angle = 1, bloomThresh = 0.1f;
+
+	bool moveLeft, moveRight, moveForward, moveBack, moveUp, moveDown,
+		rotLeft, rotRight, rotUp, rotDown, tiltLeft, tiltRight,
+		tab = false, lutActive = false, enableBloom = false, pause = false;
+
+	Model _map;
+	BaseTower baseTowers[4];
+	OtherTower otherTowers[4];
+
+	BaseEnemy baseEnemies[4];
+	OtherEnemy otherEnemies[4];
+
+	Point points[8];
+
+
+#pragma endregion
+
+	void cameraMovement(float dt)
+	{
+		//// Movement
+		if (moveLeft)
+			Game::translateCameraBy({ -speed * dt,0,0 });
+		if (moveRight)
+			Game::translateCameraBy({ speed * dt,0,0 });
+		if (moveForward)
+			Game::translateCameraBy({ 0,0,speed * dt });
+		if (moveBack)
+			Game::translateCameraBy({ 0,0,-speed * dt });
+		if (moveUp)
+			Game::translateCameraBy({ 0,speed * dt,0 });
+		if (moveDown)
+			Game::translateCameraBy({ 0,-speed * dt,0 });
+
+		// Rotation
+		if (tiltLeft)
+			Game::rotateCameraBy({ 0,0,-angle });
+		if (tiltRight)
+			Game::rotateCameraBy({ 0,0,angle });
+		if (rotLeft)
+			Game::rotateCameraBy({ 0,-angle,0 });
+		if (rotRight)
+			Game::rotateCameraBy({ 0,angle,0 });
+		if (rotUp)
+			Game::rotateCameraBy({ angle,0,0 });
+		if (rotDown)
+			Game::rotateCameraBy({ -angle,0,0 });
+	}
+
+		void init() 
+		{
+			FrustumPeramiters frustum{ 65,(float)Game::getWindowWidth() / Game::getWindowHeight(),0.001f,500 };
+
+			Game::setCameraType(&frustum);
+
+			_map.create(new PrimitivePlane(Coord3D(5.0f, 0.0f, 5.0f)));
+			Game::addModel(&_map);
+
+			for (int i = 0; i < 4; i++) {//basetower
+				baseTowers[i].create("Models/rocket-ship/rocket ship.obj");
+				baseTowers[i].setScale(0.025);
+				Game::addModel(&baseTowers[i]);
+			}
+			for (int i = 0; i < 4; i++) {//other tower
+				otherTowers[i].create("Models/Note/note.obj");
+				otherTowers[i].translate(1,0.2,0);
+				otherTowers[i].setScale(0.5);
+				Game::addModel(&otherTowers[i]);
+			}
+
+			for (int i = 0; i < 4; i++) {//base enemies
+				baseEnemies[i].create("Models/rocket-ship/rocket ship.obj");
+				baseEnemies[i].setColour(0.5,0.5,1);
+				baseEnemies[i].setScale(0.025);
+				baseEnemies[i] .translate(0, 0, -1);
+				Game::addModel(&baseEnemies[i]);
+			}
+
+			for (int i = 0; i < 4; i++) {//other enemies
+				otherEnemies[i].create("Models/Note/note.obj");
+				otherEnemies[i].setColour(0.5, 0.5, 1);
+				otherEnemies[i].translate(1, 0.2, -1);
+				otherEnemies[i].setScale(0.5);
+				Game::addModel(&otherEnemies[i]);
+			}
+
+			for (int i = 0; i < 8; i++) {//other enemies
+				points[i].create("Models/Note/note.obj");
+				points[i].setColour(1, 0.5, 0.5);
+				points[i].translate(-1, 0.2, -1);
+				points[i].setScale(0.5);
+				Game::addModel(&points[i]);
+			}
+			
+			points[0].translate(0.0, 0.5, 0.0);
+
+
+			Game::getMainCamera()->rotate(-70.0f, 0.0f, 0.0f);
+			Game::getMainCamera()->translate(0.0f, 3.0f, -2.0f);
+			Game::getMainCamera()->enableFPSMode(true);
+
+
+			setSkyBox("Skyboxes/skybox/");
+			enableSkyBox(true);
+			
+
+
+			keyPressed =
+				[&](int key, int mod)->void
+			{
+
+
+
+				if (key == 'R')
+				{
+					Game::getMainCamera()->reset();
+					Game::setCameraPosition({ 0,0,-3 });
+				}
+				static bool sky = true, frame = false;
+				if (key == GLFW_KEY_SPACE)
+					pause = !pause;
+				//enableSkyBox(sky = !sky);
+
+				if (key == GLFW_KEY_F5)
+					Shader::refresh();
+
+				//static int count;
+				if (key == GLFW_KEY_TAB)
+					tab = !tab;//	std::swap(model[0], model[count++]);
+
+
+				if (key == 'A')
+					moveLeft = true;
+				
+				if (key == 'D')
+					moveRight = true;
+				
+				if (key == 'W')
+					moveForward = true;
+				
+				if (key == 'S')
+					moveBack = true;
+
+				if (key == 'Q')
+					moveDown = true;
+				
+				if (key == 'E')
+					moveUp = true;
+				
+				
+				if (key == GLFW_KEY_PAGE_UP)
+					tiltLeft = true;
+				
+				if (key == GLFW_KEY_PAGE_DOWN)
+					tiltRight = true;
+				
+				if (key == GLFW_KEY_LEFT)
+					rotLeft = true;
+				
+				if (key == GLFW_KEY_RIGHT)
+					rotRight = true;
+				
+				if (key == GLFW_KEY_UP)
+					rotUp = true;
+				
+				if (key == GLFW_KEY_DOWN)
+					rotDown = true;
+			};
+
+			keyReleased =
+				[&](int key, int mod)->void
+			{
+				if (key == 'A')
+					moveLeft = false;
+
+				if (key == 'D')
+					moveRight = false;
+
+				if (key == 'W')
+					moveForward = false;
+
+				if (key == 'S')
+					moveBack = false;
+
+				if (key == 'Q')
+					moveDown = false;
+
+				if (key == 'E')
+					moveUp = false;
+
+
+				if (key == GLFW_KEY_PAGE_UP)
+					tiltLeft = false;
+
+				if (key == GLFW_KEY_PAGE_DOWN)
+					tiltRight = false;
+
+				if (key == GLFW_KEY_LEFT)
+					rotLeft = false;
+
+				if (key == GLFW_KEY_RIGHT)
+					rotRight = false;
+
+				if (key == GLFW_KEY_UP)
+					rotUp = false;
+
+				if (key == GLFW_KEY_DOWN)
+					rotDown = false;
+
+				puts(Game::getMainCamera()->getPosition().toString());
+			};
+		}
+	
+	void update(double dt) {
+		cameraMovement(dt);
+
+
+	}
+};
+
 int main()
 {
 	Game::init("Midterm", 1900, 1060);
-
-	Test test;
+	GDWGAME daGame;
+	//Test test;
 	//Song song;//just another scene... move along
-	Game::setScene(&test);
+	Game::setScene(&daGame);
 	Game::run();
 
 	return 0;
