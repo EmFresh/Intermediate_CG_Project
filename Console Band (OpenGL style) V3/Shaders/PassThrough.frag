@@ -135,8 +135,8 @@ vec3 calculateDirectionalLight() {
   vec3 viewDirTrans   = uViewPos.xyz - posTrans; 
   
  return 
- blinnPhong(-LightDirection,    viewDirOP,    posOP,    normOP) +
- blinnPhong(-LightDirection, viewDirTrans, posTrans, normTrans);
+ blinnPhong(LightDirection, LightDirection,    posOP,    normOP) +
+ blinnPhong(LightDirection, LightDirection, posTrans, normTrans);
 }
 
 void directionalLight() { 

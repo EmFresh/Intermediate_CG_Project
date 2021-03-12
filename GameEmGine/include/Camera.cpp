@@ -103,11 +103,9 @@ bool Camera::update()
 			Transformer::translateBy(m_positionBy);
 
 		if(m_isRotate)
-			m_rotate.y *= -1,
 			Transformer::rotate(m_rotate);
 
 		if(m_isRotateBy)
-			m_rotateBy.y *= -1,
 			Transformer::rotateBy(m_rotateBy);
 
 
@@ -242,7 +240,7 @@ glm::mat4 Camera::getWorldTransformation()
 
 
 #include <algorithm>
-void Camera::render(Shader* shader, std::unordered_map<void*, Model*>& models, bool trans,bool shadow)
+void Camera::render(Shader* shader,const std::unordered_map<void*, Model*>& models, bool trans,bool shadow)
 {
 
 	std::vector<std::pair<void*, Model*>> models2(models.begin(), models.end());

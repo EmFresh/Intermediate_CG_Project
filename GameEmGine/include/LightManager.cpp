@@ -53,9 +53,9 @@ void LightManager::setShader(Shader* shad)
 	m_shader = shad;
 }
 
-void LightManager::shadowRender(unsigned w, unsigned h, FrameBuffer* to, FrameBuffer* gBuff, std::unordered_map<void*, Model*>& models)
+void LightManager::shadowRender(unsigned w, unsigned h, FrameBuffer* to, const FrameBuffer* gBuff, const std::unordered_map<void*, Model*>& models)
 {
-	static Camera cam(Camera::ORTHOGRAPHIC, {(float)80,(float)80,70});
+	static Camera cam(Camera::ORTHOGRAPHIC, {(float)80,(float)80,80});
 	static glm::mat4 lsm(1);
 
 
@@ -87,41 +87,49 @@ void LightManager::shadowRender(unsigned w, unsigned h, FrameBuffer* to, FrameBu
 			m_shadows->resizeDepth(w, h);
 			m_shadows->clear();
 
+			glm::vec4 dir(0, 0, 1, 1);
+
 			shad->enable();
 			shad->sendUniform("lightSpaceMatrix", lsm =
 							  cam.getProjectionMatrix() *
-							  glm::lookAt(glm::vec3(m_lights[a]->getWorldRotationMatrix() *
-							  glm::vec4(m_lights[a]->getForward().toVec3(), 1))
-							  * glm::vec3{40,40,70}, glm::vec3(), glm::vec3(0, 1, 0)));
+							  glm::lookAt(
+							  glm::vec3(dir = m_lights[a]->getWorldRotationMatrix() *
+							  (m_lights[a]->getLocalRotationMatrix() * dir)) *
+							  glm::vec3{40,40,40},
+							  glm::vec3(),
+							  glm::vec3(0, 1, 0)));
 			shad->disable();
 
-			// use this for point lights
-			for(int b = 0; b < 6; b++)
-			{
+			dir = -dir;
 
+			//// use this for point lights
 
-				//	switch(b)
-				//	{
-				//	case 0:
-				//		cam.rotate(90 * Coord3D<>{1, 0, 0});
-				//		break;
-				//	case 1:
-				//		cam.rotate(90 * Coord3D<>{-1, 0, 0});
-				//		break;
-				//	case 2:
-				//		cam.rotate(90 * Coord3D<>{0, 1, 0});
-				//		break;
-				//	case 3:
-				//		cam.rotate(90 * Coord3D<> {0, -1, 0});
-				//		break;
-				//	case 4:
-				//		cam.rotate({0, 0, 0});
-				//		break;
-				//	case 5:
-				//		cam.rotate(180 * Coord3D<>{0, -1, 0});
-				//		break;
-				//	}
-			}
+		//for(int b = 0; b < 6; b++)
+		//{
+		//
+		//
+		//	//	switch(b)
+		//	//	{
+		//	//	case 0:
+		//	//		cam.rotate(90 * Coord3D<>{1, 0, 0});
+		//	//		break;
+		//	//	case 1:
+		//	//		cam.rotate(90 * Coord3D<>{-1, 0, 0});
+		//	//		break;
+		//	//	case 2:
+		//	//		cam.rotate(90 * Coord3D<>{0, 1, 0});
+		//	//		break;
+		//	//	case 3:
+		//	//		cam.rotate(90 * Coord3D<> {0, -1, 0});
+		//	//		break;
+		//	//	case 4:
+		//	//		cam.rotate({0, 0, 0});
+		//	//		break;
+		//	//	case 5:
+		//	//		cam.rotate(180 * Coord3D<>{0, -1, 0});
+		//	//		break;
+		//	//	}
+		//}
 
 			//get shadow view
 			glCullFace(GL_FRONT);
@@ -139,16 +147,13 @@ void LightManager::shadowRender(unsigned w, unsigned h, FrameBuffer* to, FrameBu
 			glClear(GL_DEPTH_BUFFER_BIT);
 
 			Shader* m_shadowCompShader = ResourceManager::getShader("shaders/Main Buffer.vtsh", "shaders/Shadow Composite.fmsh");
-			
-			glm::vec4 dir(0, 0, 1, 1.0f);
-			dir = m_lights[a]->getWorldRotationMatrix() * (m_lights[a]->getLocalRotationMatrix() * dir);
 
 			m_shadowCompShader->enable();
 			m_shadowCompShader->sendUniform("uScene", 0);
 			m_shadowCompShader->sendUniform("uPosition", 1);
 			m_shadowCompShader->sendUniform("uNormOP", 2);
 			m_shadowCompShader->sendUniform("uShadow", 3);
-			m_shadowCompShader->sendUniform("uLightDirection",dir);
+			m_shadowCompShader->sendUniform("uLightDirection", dir);
 			m_shadowCompShader->sendUniform("uLightViewProj", lsm);
 			m_shadowCompShader->sendUniform("uShadowEnable", true);
 
@@ -217,7 +222,7 @@ void LightManager::update()
 		m_shader->sendUniform("LightPosition", pos);
 
 
-		dir = m_lights[a]->getWorldRotationMatrix() * (m_lights[a]->getLocalRotationMatrix() * dir);
+		dir = (m_lights[a]->getWorldRotationMatrix()) * ((m_lights[a]->getLocalRotationMatrix()) * dir);
 		dir = normalize(dir);
 
 		pos = {0, 0, 0, 1.0f};
@@ -250,6 +255,7 @@ void LightManager::update()
 
 		FrameBuffer::drawFullScreenQuad();
 	}
+
 	m_shader->sendUniform("LightEnable", false);
 
 	m_shader->disable();

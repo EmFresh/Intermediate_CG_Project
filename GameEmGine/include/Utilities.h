@@ -6,7 +6,7 @@
 #include <map>
 
 #define reclass(a_class,a_val) (*(a_class*)&(a_val))
-typedef const char*    cstring;
+typedef const char* cstring;
 typedef unsigned int   uint;
 typedef unsigned short ushort;
 //#define unsigned int unsigned int
@@ -109,10 +109,10 @@ static inline int vectorWrap(int num, int mod)
 //};
 
 
-
 template<class T = float>
 struct Coord2D
 {
+	
 	union
 	{
 		struct { T x, y; };
@@ -120,21 +120,22 @@ struct Coord2D
 		struct { T w, h; };
 		struct { T width, height; };
 	};
-	glm::vec2 toVec2()
-	{
-		return glm::vec2(x, y);
-	}
-	Coord2D() = default;
 
+	Coord2D() = default;
 	Coord2D(T a_x, T a_y)
 	{
 		x = a_x, y = a_y;
 	}
+
+	glm::vec2 toVec2()
+	{
+		return glm::vec2(x, y);
+	}
+
 	T distance()
 	{
 		return sqrtf(x * x + y * y);
 	}
-
 	static T distance(Coord2D v1, Coord2D v2)
 	{
 		Coord2D v3 = v2 - v1;
@@ -487,18 +488,24 @@ struct Coord3D
 		return toStr;
 	}
 private:
-	
+
 };
 
 struct ColourRGBA
 {
 	GLubyte r, g, b, a;
+	//1/255 = 0.0039215686274509803921568627451
+#define BYTE_TO_FLOAT_MULTI 0.0039215686274509803921568627451
 
 	ColourRGBA():r((GLubyte)255), g((GLubyte)255), b((GLubyte)255), a((GLubyte)255)
 	{}
 
 	ColourRGBA(GLubyte a_r, GLubyte a_g, GLubyte a_b, GLubyte a_a = (GLubyte)255):r(a_r), g(a_g), b(a_b), a(a_a)
 	{}
+	glm::vec4 toVec4()
+	{
+		return glm::vec4(r * BYTE_TO_FLOAT_MULTI, g * BYTE_TO_FLOAT_MULTI, b * BYTE_TO_FLOAT_MULTI, a * BYTE_TO_FLOAT_MULTI);
+	}
 
 	void set(ColourRGBA rgba)
 	{

@@ -458,7 +458,7 @@ void GameEmGine::update()
 
 
 	glClearColor((float)m_colour.r / 255, (float)m_colour.g / 255, (float)m_colour.b / 255, (float)m_colour.a / 255);//BG colour
-	
+
 	m_postBuffer->clear();
 
 	m_mainCamera->update();
@@ -499,24 +499,20 @@ void GameEmGine::update()
 	m_mainCamera->render(m_gBufferShader, m_models, true);
 	m_gBuffer->disable();
 
+	m_gBuffer->moveSingleColourToBuffer(m_postBuffer->getColourWidth(0), m_postBuffer->getColourHeight(0), m_postBuffer,4);
 	{
 		//store data for later post process
 		m_postBuffer->enable();
 		m_postProcessShader->enable();
 
 		//bind textures
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, m_gBuffer->getColorHandle(0));
-		glActiveTexture(GL_TEXTURE1);
-		glBindTexture(GL_TEXTURE_2D, m_gBuffer->getColorHandle(1));
-		glActiveTexture(GL_TEXTURE2);
-		glBindTexture(GL_TEXTURE_2D, m_gBuffer->getColorHandle(2));
-		glActiveTexture(GL_TEXTURE3);
-		glBindTexture(GL_TEXTURE_2D, m_gBuffer->getColorHandle(3));
-		glActiveTexture(GL_TEXTURE4);
-		glBindTexture(GL_TEXTURE_2D, m_gBuffer->getColorHandle(4));
-		glActiveTexture(GL_TEXTURE5);
-		glBindTexture(GL_TEXTURE_2D, tmpRamp.id);
+		Texture2D::bindTexture(0, m_gBuffer->getColorHandle(0));
+		Texture2D::bindTexture(1, m_gBuffer->getColorHandle(1));
+		Texture2D::bindTexture(2, m_gBuffer->getColorHandle(2));
+		Texture2D::bindTexture(3, m_gBuffer->getColorHandle(3));
+		Texture2D::bindTexture(4, m_gBuffer->getColorHandle(4));
+		tmpRamp.bindTexture(5);
+
 
 		m_postProcessShader->sendUniform("uPosOP", 0);
 		m_postProcessShader->sendUniform("uPosTrans", 1);
@@ -527,9 +523,9 @@ void GameEmGine::update()
 
 		glDisable(GL_DEPTH_TEST);
 
-		//get the flat shaded scene
-		m_postProcessShader->sendUniform("LightType", Light::TYPE::NONE);
-		FrameBuffer::drawFullScreenQuad();
+		////get the flat shaded scene
+		//m_postProcessShader->sendUniform("LightType", Light::TYPE::NONE);
+		//FrameBuffer::drawFullScreenQuad();
 
 		//Apply lighting
 		LightManager::setShader(m_postProcessShader);
@@ -541,8 +537,8 @@ void GameEmGine::update()
 
 		//un-bind textures
 		for(int a = 0; a < 5; ++a)
-			glActiveTexture(GL_TEXTURE0 + a),
-			glBindTexture(GL_TEXTURE_2D, GL_NONE);
+			Texture2D::bindTexture(a, GL_NONE);
+
 
 		m_postProcessShader->disable();
 		m_postBuffer->disable();
@@ -550,12 +546,11 @@ void GameEmGine::update()
 
 	//Apply shadows
 	LightManager::shadowRender(1024, 1024, m_postBuffer, m_gBuffer, m_models);
-	//glViewport(0, 0, getWindowWidth(), getWindowHeight());
 
 	//post effects
 	if(m_customRender)
 		m_customRender(m_gBuffer, m_postBuffer);
-
+	
 	m_postBuffer->moveColourToBackBuffer(getWindowWidth(), getWindowHeight());
 	m_postBuffer->moveDepthToBackBuffer(getWindowWidth(), getWindowHeight());
 
@@ -588,11 +583,12 @@ void GameEmGine::changeViewport(GLFWwindow*, int w, int h)
 	m_gBuffer->resizeColour(0, w, h);
 	m_gBuffer->resizeColour(1, w, h);
 	m_gBuffer->resizeColour(2, w, h);
+	m_gBuffer->resizeColour(3, w, h);
+	m_gBuffer->resizeColour(4, w, h);
 
 	m_postBuffer->resizeDepth(w, h);
 	m_postBuffer->resizeColour(0, w, h);
-	//m_greyscaleBuffer->resizeColour(0, w, h);
-
+	
 	//m_buffer1->resizeColour(0, unsigned((float)w / SCREEN_RATIO), unsigned((float)h / SCREEN_RATIO));
 	//m_buffer2->resizeColour(0, unsigned((float)w / SCREEN_RATIO), unsigned((float)h / SCREEN_RATIO));
 

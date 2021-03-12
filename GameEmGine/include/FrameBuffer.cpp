@@ -7,8 +7,8 @@ FrameBuffer::FrameBuffer(unsigned numColorAttachments, std::string tag)
 	glGenFramebuffers(1, &m_fboID);
 	m_numColorAttachments = numColorAttachments;
 
-	m_colorAttachments = new GLuint[m_numColorAttachments];
-	memset(m_colorAttachments, 0, sizeof(GLuint) * numColorAttachments);
+	m_colorAttachments = new Texture2D[m_numColorAttachments];
+	memset(m_colorAttachments, 0, sizeof(Texture2D) * numColorAttachments);
 	m_depthAttachment = 0;
 
 	//Buffs is required as a parameter for glDrawBuffers()
@@ -28,11 +28,11 @@ FrameBuffer::~FrameBuffer()
 
 void FrameBuffer::initColourTexture(unsigned index, unsigned width, unsigned height, GLint internalFormat, GLint filter, GLint wrap)
 {
-	if(!m_colorAttachments[index])
+	if(!m_colorAttachments[index].id)
 	{
 		glBindFramebuffer(GL_FRAMEBUFFER, m_fboID);
 		//create colour texture
-		glGenTextures(1, &m_colorAttachments[index]);
+		glGenTextures(1, &m_colorAttachments[index].id);
 		glBindFramebuffer(GL_FRAMEBUFFER, GL_NONE);
 
 		resizeColour(index, width, height, internalFormat, filter, wrap);
@@ -55,20 +55,25 @@ void FrameBuffer::initDepthTexture(unsigned width, unsigned height)
 
 void FrameBuffer::resizeColour(unsigned index, unsigned width, unsigned height, GLint internalFormat, GLint filter, GLint wrap)
 {
-	if(!(width && height))return;
-	if(m_colorAttachments[index])
+	if(!(width && height) ||
+	   (m_colorAttachments[index].width == (int)width &&
+	   m_colorAttachments[index].height == (int)height))return;
+
+	if(m_colorAttachments[index].id)
 	{
 		glBindFramebuffer(GL_FRAMEBUFFER, m_fboID);
 
-		static GLuint tmpAttachment; tmpAttachment = m_colorAttachments[index];
+		static GLuint tmpAttachment; tmpAttachment = m_colorAttachments[index].id;
 
-		glGenTextures(1, &m_colorAttachments[index]);
+		glGenTextures(1, &m_colorAttachments[index].id);
 
 		m_internalFormat = internalFormat;
 		m_filter = filter;
 		m_wrap = wrap;
+		m_colorAttachments[index].width = width;
+		m_colorAttachments[index].height = height;
 
-		glBindTexture(GL_TEXTURE_2D, m_colorAttachments[index]);
+		glBindTexture(GL_TEXTURE_2D, m_colorAttachments[index].id);
 		glTexStorage2D(GL_TEXTURE_2D, 1, m_internalFormat, width, height);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, m_filter);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, m_filter);
@@ -76,7 +81,7 @@ void FrameBuffer::resizeColour(unsigned index, unsigned width, unsigned height, 
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, m_wrap);
 
 		//Bind texture to the fbo
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + index, GL_TEXTURE_2D, m_colorAttachments[index], 0);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + index, GL_TEXTURE_2D, m_colorAttachments[index].id, 0);
 
 		glBindTexture(GL_TEXTURE_2D, 0);
 		glDeleteTextures(1, &tmpAttachment);
@@ -143,7 +148,7 @@ void FrameBuffer::unload()
 	{
 		for(unsigned i = 0; i < m_numColorAttachments; i++)
 		{
-			glDeleteTextures(1, &m_colorAttachments[i]);
+			glDeleteTextures(1, &m_colorAttachments[i].id);
 		}
 
 		delete[] m_colorAttachments;
@@ -167,7 +172,7 @@ void FrameBuffer::setClearColour(ColourRGBA col)
 
 void FrameBuffer::setClearColour(GLclampf r, GLclampf g, GLclampf b, GLclampf a)
 {
-	
+
 	glClearColor(r, g, b, a);//BG colour
 }
 
@@ -214,44 +219,51 @@ void FrameBuffer::setViewport(int x, int y, int width, int height) const
 	glViewport(x, y, width, height);
 }
 
-void FrameBuffer::moveColourToBackBuffer(int windowWidth, int windowHeight, uint from)
+void FrameBuffer::moveColourToBackBuffer(int windowWidth, int windowHeight)
 {
-	moveColourToBuffer(windowWidth, windowHeight, GL_NONE, from, 0);
+	moveColourToBuffer(windowWidth, windowHeight, GL_NONE);
 }
 
-void FrameBuffer::moveColourToBuffer(int windowWidth, int windowHeight, FrameBuffer* fbo, uint from, uint to)
+void FrameBuffer::moveColourToBuffer(int windowWidth, int windowHeight, FrameBuffer* fbo)
 {
 	if(!m_numColorAttachments)
 	{
 		puts("This FrameBuffer has NO colour attachments");
 		return;
 	}
-	from, to;
+
 	glBindFramebuffer(GL_READ_FRAMEBUFFER, m_fboID);
 	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo ? fbo->m_fboID : GL_NONE);
 
-	////if(fbo)
-	//{
-	//// bind source texture to color attachment
-	//glBindTexture(GL_TEXTURE_2D, m_colorAttachments[from]);
-	//glFramebufferTexture2D(GL_TEXTURE_2D, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_colorAttachments[from], 0);
-	//glReadBuffer(GL_COLOR_ATTACHMENT0);
-	//
-	//// bind destination texture to another color attachment
-	//glBindTexture(GL_TEXTURE_2D, fbo ? fbo->m_colorAttachments[to] : 0);
-	//glFramebufferTexture2D(GL_TEXTURE_2D, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, fbo ? fbo->m_colorAttachments[to] : 0, 0);
-	//glDrawBuffer(GL_COLOR_ATTACHMENT1);
-	//}
-
 	glBlitFramebuffer(0, 0, windowWidth, windowHeight, 0, 0, windowWidth, windowHeight, GL_COLOR_BUFFER_BIT, GL_NEAREST);
 
+	glBindFramebuffer(GL_FRAMEBUFFER, GL_NONE);
+}
 
-	////if(fbo)
-	//{
-	//	glFramebufferTexture2D(GL_TEXTURE_2D, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, GL_NONE, 0);
-	//	glFramebufferTexture2D(GL_TEXTURE_2D, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, GL_NONE, 0);
-	//	glBindTexture(GL_TEXTURE_2D, GL_NONE);
-	//}
+void FrameBuffer::moveSingleColourToBackBuffer(int w, int h, uint from)
+{
+	moveSingleColourToBuffer(w, h, nullptr, from, 0);
+}
+
+void FrameBuffer::moveSingleColourToBuffer(int w, int h, FrameBuffer* fbo, uint from, uint to)
+{
+	if(!m_numColorAttachments)
+	{
+		puts("This FrameBuffer has NO colour attachments");
+		return;
+	}
+
+	glBindFramebuffer(GL_READ_FRAMEBUFFER, m_fboID);
+	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo ? fbo->m_fboID : GL_NONE);
+
+	glReadBuffer(GL_COLOR_ATTACHMENT0 + from);
+	glDrawBuffer(GL_COLOR_ATTACHMENT0 + to);
+
+	glBlitFramebuffer(0, 0, m_colorAttachments[from].width, m_colorAttachments[from].height, 0, 0, w, h, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+
+	//glReadBuffer(GL_NONE);
+	//glDrawBuffer(GL_NONE);
+
 	glBindFramebuffer(GL_FRAMEBUFFER, GL_NONE);
 }
 
@@ -285,7 +297,7 @@ void FrameBuffer::takeFromBackBufferDepth(int windowWidth, int windowHeight)
 	glBindFramebuffer(GL_READ_FRAMEBUFFER, GL_NONE);
 	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, m_fboID);
 
-	glBlitFramebuffer(0, 0, windowWidth, windowHeight, 0, 0, windowWidth, windowHeight, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
+	glBlitFramebuffer(0, 0, windowWidth, windowHeight, 0, 0, m_width, m_height, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
 
 	glBindFramebuffer(GL_FRAMEBUFFER, GL_NONE);
 }
@@ -297,7 +309,7 @@ GLuint FrameBuffer::getDepthHandle() const
 
 GLuint FrameBuffer::getColorHandle(unsigned m_index) const
 {
-	return m_colorAttachments[m_index];
+	return m_colorAttachments[m_index].id;
 }
 
 void FrameBuffer::setPostProcess(std::function<void()>post, unsigned layer)
@@ -372,6 +384,16 @@ void FrameBuffer::drawFullScreenQuad()
 	glDrawArrays(GL_TRIANGLES, 0, 6);
 	glBindVertexArray(GL_NONE);
 
+}
+
+uint FrameBuffer::getColourWidth(int index)
+{
+	return m_colorAttachments[index].width;
+}
+
+uint FrameBuffer::getColourHeight(int index)
+{
+	return m_colorAttachments[index].height;
 }
 
 unsigned FrameBuffer::getDepthWidth()

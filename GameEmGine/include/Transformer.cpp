@@ -47,10 +47,10 @@ void Transformer::rotate(Coord3D<> angles)
 	m_localRotate = glm::mat4(1);
 
 	if(angles.z)
-		m_localRotate *= Quat::quatRotationMat(angles.z, Coord3D<>{0, 0, 1});
+		m_localRotate *= Quat::quatRotationMat(-angles.z, Coord3D<>{0, 0, 1});
 
 	if(angles.y)
-		m_localRotate *= Quat::quatRotationMat(angles.y, Coord3D<>{0, 1, 0});
+		m_localRotate *= Quat::quatRotationMat(-angles.y, Coord3D<>{0, 1, 0});
 
 	if(angles.x)
 		m_localRotate *= Quat::quatRotationMat(angles.x, Coord3D<>{1, 0, 0});

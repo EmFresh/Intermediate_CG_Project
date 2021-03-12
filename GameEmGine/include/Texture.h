@@ -22,7 +22,7 @@ struct Texture2D
 	ColourRGBA colour;
 	int width, height;
 	TEXTURE_TYPE2D type = TEXTURE_TYPE2D::NONE;
-	
+
 	std::string name;
 
 	//~Texture2D()
@@ -35,21 +35,29 @@ struct Texture2D
 
 	void deleteTexture()
 	{
-		if(id)
-		{
-			glDeleteTextures(1, &id);
-			id = 0;
-		}
+		if(!id)return;
+		glDeleteTextures(1, &id);
+		id = 0;
 	}
 
-	void bindTexture(unsigned slot)
+
+	//bind texture to whatever slot is specified
+	inline void bindTexture()
 	{
-		glActiveTexture(GL_TEXTURE0 + slot);
 		glBindTexture(GL_TEXTURE_2D, id);
 	}
 
-	void bindTexture()
+	//bind texture to whatever slot is currently active
+	inline void bindTexture(GLuint slot)
 	{
+		glActiveTexture(GL_TEXTURE0 + slot);
+		bindTexture();
+	}
+
+	//bind texture to whatever slot is currently active
+	static void bindTexture(GLuint slot, GLuint id)
+	{
+		glActiveTexture(GL_TEXTURE0 + slot);
 		glBindTexture(GL_TEXTURE_2D, id);
 	}
 
@@ -87,6 +95,15 @@ struct Texture3D
 		}
 	}
 
+
+	//bind texture to whatever slot is specified
+	void bindTexture(GLuint slot)
+	{
+		glActiveTexture(GL_TEXTURE0 + slot);
+		bindTexture();
+	}
+
+	//bind texture to whatever slot is currently active
 	void bindTexture()
 	{
 		switch(type)
@@ -102,10 +119,70 @@ struct Texture3D
 		}
 	}
 
+	static void bindTexture(GLuint slot, TEXTURE_TYPE3D type, GLuint id)
+	{
+		glActiveTexture(GL_TEXTURE0 + slot);
+		switch(type)
+		{
+		case TEXTURE_TYPE3D::LUT:
+			glBindTexture(GL_TEXTURE_3D, id);
+			break;
+		case TEXTURE_TYPE3D::CUBE:
+			glBindTexture(GL_TEXTURE_CUBE_MAP, id);
+			break;
+		default:
+			puts("undefined type\n");
+		}
+	}
 
+	static void unbindTexture(GLuint slot, TEXTURE_TYPE3D type)
+	{
+		glActiveTexture(GL_TEXTURE0 + slot);
+		switch(type)
+		{
+		case TEXTURE_TYPE3D::LUT:
+			glBindTexture(GL_TEXTURE_3D, 0);
+			break;
+		case TEXTURE_TYPE3D::CUBE:
+			glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
+			break;
+		default:
+			puts("undefined type\n");
+		}
+	}
+	
+	static void unbindTexture(TEXTURE_TYPE3D type)
+	{
+		switch(type)
+		{
+		case TEXTURE_TYPE3D::LUT:
+			glBindTexture(GL_TEXTURE_3D, 0);
+			break;
+		case TEXTURE_TYPE3D::CUBE:
+			glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
+			break;
+		default:
+			puts("undefined type\n");
+		}
+	}
 
 	void unbindTexture()
 	{
+		switch(type)
+		{
+		case TEXTURE_TYPE3D::LUT:
+			glBindTexture(GL_TEXTURE_3D, 0);
+			break;
+		case TEXTURE_TYPE3D::CUBE:
+			glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
+			break;
+		default:
+			puts("undefined type\n");
+		}
+	}
+	void unbindTexture(GLuint slot)
+	{
+		glActiveTexture(GL_TEXTURE0 + slot);
 		switch(type)
 		{
 		case TEXTURE_TYPE3D::LUT:

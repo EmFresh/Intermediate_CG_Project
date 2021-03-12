@@ -89,7 +89,15 @@ public:
 
 	static void setFramebuffer(FrameBuffer* buff);
 
-	static void shadowRender(unsigned w, unsigned h, FrameBuffer* to,FrameBuffer* gBuffer, std::unordered_map<void*, Model*>&);
+	/// <summary>
+	/// Renders shadows to specified buffer. Resets the viewport to window size once complete
+	/// </summary>
+	/// <param name="w:">Width</param>
+	/// <param name="h:">Height</param>
+	/// <param name="to:">framebuffer that gets draw info</param>
+	/// <param name="gBuffer:">used </param>
+	/// <param name=""></param>
+	static void shadowRender(unsigned w, unsigned h, FrameBuffer* to,const FrameBuffer* gBuffer, const std::unordered_map<void*, Model*>&);
 	//Updates and renders each light
 	static void update();
 	static void clear();

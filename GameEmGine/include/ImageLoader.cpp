@@ -7,7 +7,7 @@ Texture2D ImageLoader::loadImage2D(cstring path)
 	//int width, height;
 
 	unsigned char* image = SOIL_load_image(path, &texture.width, &texture.height, nullptr, SOIL_LOAD_RGBA);
-
+	
 	if(image == nullptr)
 	{
 		printf("Image \"%s\", returned with null pointer\n", path);
