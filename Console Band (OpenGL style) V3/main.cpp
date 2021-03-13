@@ -5,6 +5,7 @@
 #include <GameEmGine.h>
 #include "Song.h"
 #include "Menu.h"
+typedef Coord3D<> Vec3;
 
 static std::string lutPath = "textures/hot.cube";
 class Test: public Scene
@@ -40,7 +41,7 @@ public:
 	void init()
 	{
 		Game::setBackgroundColour(.15f, .15f, .15f);
-		Game::setCameraPosition({0,0,-3});
+		Game::translateCamera({0,0,-3});
 		FrustumPeramiters frustum{65,(float)Game::getWindowWidth() / Game::getWindowHeight(),0.001f,500};
 
 		Game::setCameraType(&frustum);
@@ -341,7 +342,7 @@ public:
 			if(key == 'R')
 			{
 				Game::getMainCamera()->reset();
-				Game::setCameraPosition({0,0,-3});
+				Game::translateCamera({0,0,-3});
 			}
 			static bool sky = true, frame = false;
 			if(key == 'N')
@@ -515,9 +516,9 @@ public:
 	void update(double dt)
 	{
 		if(!tab)
-			cameraMovement(dt);
+			cameraMovement((float)dt);
 		else
-			lightMovement(dt);
+			lightMovement((float)dt);
 
 		float maxSpeed = 10;
 
@@ -567,11 +568,11 @@ public:
 	}
 
 };
+
 class Point: public Model
 {
 public:
 	Point():Model() {};
-	Point(Model& model):Model(model) {}
 	Point(Model& model, cstring tag = ""):Model(model, tag) {}
 	Point(primitiveMesh* model, cstring tag = ""):Model(model, tag) {}
 	Point(cstring path, cstring tag = ""):Model(path, tag) {}
@@ -584,7 +585,6 @@ public:
 	}
 
 };
-
 
 class OtherTower: public Model
 {
@@ -607,17 +607,32 @@ public:
 class BaseEnemy: public Model
 {
 public:
+
+	bool start = false;
+	float speed = 5;
+	int currentDest = 0;
+	std::vector<Point*> dests;
+
+
 	BaseEnemy():Model() {};
 	BaseEnemy(Model& model):Model(model) {}
 	BaseEnemy(Model& model, cstring tag = ""):Model(model, tag) {}
 	BaseEnemy(primitiveMesh* model, cstring tag = ""):Model(model, tag) {}
 	BaseEnemy(cstring path, cstring tag = ""):Model(path, tag) {}
+
 	void init()
 	{}
 	void update(double dt)
 	{
+		if(!start)return;
+		if(dests.empty())return;
 
+		if((dests[0]->getPosition() - getPosition()).distance() < .1f)dests.erase(dests.begin());
+		if(dests.empty())return;
 
+		Vec3 direction = (dests[0]->getPosition() - getPosition()).normal();
+
+		translateBy(direction * speed * dt);
 	}
 
 };
@@ -656,10 +671,10 @@ class GDWGAME: public Scene
 	BaseTower baseTowers[4];
 	OtherTower otherTowers[4];
 
-	BaseEnemy baseEnemies[4];
+	std::vector <BaseEnemy*> baseEnemies;
 	OtherEnemy otherEnemies[4];
 
-	Point points[8];
+	std::vector<Point*> points;
 
 
 #pragma endregion
@@ -703,54 +718,77 @@ class GDWGAME: public Scene
 
 		_map.create(new PrimitivePlane(Coord3D(5.0f, 0.0f, 5.0f)));
 		Game::addModel(&_map);
+		int count = 0;
 
+		//points enemies
+		points.resize(8);
+		for(auto& point : points)
+		{
+			point = new Point();
+			point->create("Models/Note/note.obj");
+			point->setColour(1, 0.5, 0.5);
+			point->translate(count % 2 ? -2.5 : 2.5, 0, 2.5 - (count * .25f * .5 * 5));
+			point->setScale(0.5);
+			Game::addModel(point);
+			++count;
+		}
+
+		//basetower
 		for(int i = 0; i < 4; i++)
-		{//basetower
+		{
 			baseTowers[i].create("Models/rocket-ship/rocket ship.obj");
-			baseTowers[i].setScale(0.025);
+			baseTowers[i].setScale(0.025f);
 			Game::addModel(&baseTowers[i]);
 		}
+
+		//other tower
 		for(int i = 0; i < 4; i++)
-		{//other tower
+		{
 			otherTowers[i].create("Models/Note/note.obj");
-			otherTowers[i].translate(1, 0.2, 0);
-			otherTowers[i].setScale(0.5);
+			otherTowers[i].translate(1, 0.2f, 0);
+			otherTowers[i].setScale(0.5f);
 			Game::addModel(&otherTowers[i]);
 		}
 
-		for(int i = 0; i < 4; i++)
-		{//base enemies
-			baseEnemies[i].create("Models/rocket-ship/rocket ship.obj");
-			baseEnemies[i].setColour(0.5, 0.5, 1);
-			baseEnemies[i].setScale(0.025);
-			baseEnemies[i].translate(0, 0, -1);
-			Game::addModel(&baseEnemies[i]);
+		//base enemies
+		baseEnemies.resize(4);
+		for(auto& enemyBase : baseEnemies)
+		{
+			enemyBase = new BaseEnemy();
+			enemyBase->create("Models/rocket-ship/rocket ship.obj");
+			enemyBase->setColour(0.5, 0.5, 1);
+			enemyBase->setScale(0.025f);
+			enemyBase->translate(points[0]->getPosition());
+			Game::addModel(enemyBase);
 		}
+		baseEnemies[0]->dests = points;
+		baseEnemies[0]->start = true;
 
+		//other enemies
 		for(int i = 0; i < 4; i++)
-		{//other enemies
+		{
 			otherEnemies[i].create("Models/Note/note.obj");
 			otherEnemies[i].setColour(0.5, 0.5, 1);
-			otherEnemies[i].translate(1, 0.2, -1);
+			otherEnemies[i].translate(1, 0, -1);
 			otherEnemies[i].setScale(0.5);
 			Game::addModel(&otherEnemies[i]);
 		}
 
-		for(int i = 0; i < 8; i++)
-		{//other enemies
-			points[i].create("Models/Note/note.obj");
-			points[i].setColour(1, 0.5, 0.5);
-			points[i].translate(-1, 0.2, -1);
-			points[i].setScale(0.5);
-			Game::addModel(&points[i]);
-		}
-
-		
 
 
-		Game::getMainCamera()->rotate(-70.0f, 0.0f, 0.0f);
-		Game::getMainCamera()->translate(0.0f, 3.0f, -2.0f);
-		Game::getMainCamera()->enableFPSMode(true);
+		//points[0].translate(-2.5, 0, 2.5);
+		//points[1].translate(-2.5, 0, 2.5);
+		//points[2].translate(-2.5, 0, 2.5);
+		//points[3].translate(-2.5, 0, 2.5);
+		//points[4].translate(-2.5, 0, 2.5);
+		//points[5].translate(-2.5, 0, 2.5);
+		//points[6].translate(-2.5, 0, 2.5);
+		points[7]->translateBy(1.5, 0,0);
+
+
+		//Game::getMainCamera()->enableFPSMode(true);
+		Game::translateCamera({0.0f, 4.5f, -2.0f});
+		Game::rotateCamera({-70.0f, 0.0f, 0.0f});
 
 
 		setSkyBox("Skyboxes/skybox/");
@@ -767,7 +805,7 @@ class GDWGAME: public Scene
 			if(key == 'R')
 			{
 				Game::getMainCamera()->reset();
-				Game::setCameraPosition({0,0,-3});
+				Game::translateCamera({0,0,-3});
 			}
 			static bool sky = true, frame = false;
 			if(key == GLFW_KEY_SPACE)
@@ -866,7 +904,12 @@ class GDWGAME: public Scene
 
 	void update(double dt)
 	{
-		cameraMovement(dt);
+		cameraMovement((float)dt);
+
+
+		for(auto& enemy : baseEnemies)
+			enemy->update((float)dt);
+
 	}
 };
 

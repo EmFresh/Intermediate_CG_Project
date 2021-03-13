@@ -95,7 +95,7 @@ protected:
 	Coord3D<> m_size,
 		m_position, m_positionBy,
 		m_rotate, m_rotateBy,
-		m_camPosition;
+		m_camRotation;
 
 	CAM_TYPE m_type = FRUSTUM;
 

@@ -98,12 +98,15 @@ bool Camera::update()
 	{
 		if(m_isTranslate)
 			Transformer::translate(m_position);
+		m_position += m_positionBy;
 
+		m_positionBy.z *= -1;
 		if(m_isTranslateBy)
 			Transformer::translateBy(m_positionBy);
 
 		if(m_isRotate)
 			Transformer::rotate(m_rotate);
+		m_rotate += m_isRotateBy;
 
 		if(m_isRotateBy)
 			Transformer::rotateBy(m_rotateBy);
@@ -114,8 +117,6 @@ bool Camera::update()
 
 		m_cameraMat = m_projMat * m_viewMat;
 
-		m_position += m_positionBy;
-		m_rotate += m_isRotateBy;
 		m_rotateBy = m_positionBy = Coord3D<>{0,0,0};
 
 
@@ -123,7 +124,7 @@ bool Camera::update()
 			m_isTranslate = m_isTranslateBy =
 			m_cameraUpdate = false;
 
-		m_camPosition = Transformer::getRotation() * Coord3D<>{1, -1, 1};
+		m_camRotation = Transformer::getRotation() * Coord3D<>{1, -1, 1};
 
 		return true;
 	}
@@ -137,6 +138,7 @@ void Camera::translate(float x, float y, float z)
 
 void Camera::translate(Coord3D<> position)
 {
+	
 	m_position = position;
 	m_positionBy = {0,0,0};
 	m_isTranslate = m_cameraUpdate = true;
@@ -149,6 +151,7 @@ void Camera::translateBy(float x, float y, float z)
 
 void  Camera::translateBy(Coord3D<> position)
 {
+	
 	m_positionBy += position;
 	m_isTranslateBy = m_cameraUpdate = true;
 }
@@ -282,7 +285,7 @@ void Camera::render(Shader* shader,const std::unordered_map<void*, Model*>& mode
 
 Coord3D<> Camera::getRotation()
 {
-	return m_camPosition;
+	return m_camRotation;
 }
 
 glm::mat4& Camera::getProjectionMatrix()

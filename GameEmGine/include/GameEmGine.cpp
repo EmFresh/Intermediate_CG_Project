@@ -393,7 +393,7 @@ void GameEmGine::translateCameraBy(Coord3D<> pos)
 	m_mainCamera->translateBy(pos);
 }
 
-void GameEmGine::setCameraPosition(Coord3D<> pos)
+void GameEmGine::translateCamera(Coord3D<> pos)
 {
 	m_mainCamera->translate(pos);
 }
@@ -403,7 +403,7 @@ void GameEmGine::rotateCameraBy(Coord3D<> direction)
 	m_mainCamera->rotateBy(direction);
 }
 
-void GameEmGine::setCameraRotation(Coord3D<> direction)
+void GameEmGine::rotateCamera(Coord3D<> direction)
 {
 	m_mainCamera->rotate(direction);
 }

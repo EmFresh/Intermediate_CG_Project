@@ -535,7 +535,7 @@ class Song:public Scene
 			if(key == GLFW_KEY_R)
 			{
 				Game::getMainCamera()->reset();
-				Game::setCameraPosition({0,0,-5});
+				Game::translateCamera({0,0,-5});
 			}
 
 			if(key == GLFW_KEY_F5)

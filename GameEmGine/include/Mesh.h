@@ -267,11 +267,11 @@ public:
 			a.norm *= -1;
 		for(auto& a : bottom.getData())
 			a.norm *= -1;
-		for(auto& a : front.getData())
+		for(auto& a : back.getData())
 			a.norm *= -1;
 
-		indiceAdder(front.getIndices().begin(), front.getIndices().end(), front.getData());
-		indiceAdder(back.getIndices().rbegin(), back.getIndices().rend(), back.getData());
+		indiceAdder(front.getIndices().rbegin(), front.getIndices().rend(), front.getData());
+		indiceAdder(back.getIndices().begin(), back.getIndices().end(), back.getData());
 
 		indiceAdder(left.getIndices().rbegin(), left.getIndices().rend(), left.getData());
 		indiceAdder(right.getIndices().begin(), right.getIndices().end(), right.getData());

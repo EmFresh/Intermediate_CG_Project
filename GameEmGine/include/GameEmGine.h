@@ -84,7 +84,7 @@ public:
 	/*
 	sets the camera position in pixels
 	*/
-	static void setCameraPosition(Coord3D<> pos);
+	static void translateCamera(Coord3D<> pos);
 
 	/*
 	moves the camera angle
@@ -94,7 +94,7 @@ public:
 	/*
 		sets the camera angle
 	*/
-	static void setCameraRotation(Coord3D<> direction);
+	static void rotateCamera(Coord3D<> direction);
 
 	//Adds a new model to the draw list
 	static void addModel(Model* model);
