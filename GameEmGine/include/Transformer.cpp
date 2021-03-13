@@ -100,7 +100,6 @@ void Transformer::translateBy(Coord3D<> pos)
 
 	m_posDat += (forward * -pos.z) + (up * pos.y) + (right * pos.x);
 	m_localTranslate = glm::translate(glm::mat4(1), reclass(glm::vec3, m_posDat));
-	m_posDat = tmpPos+pos;
 }
 
 void Transformer::translateBy(float x, float y, float z)
@@ -128,7 +127,6 @@ void Transformer::translate(Coord3D<> pos)
 	
 	m_posDat = pos.x * right + pos.y * up + -pos.z * forward;
 	m_localTranslate = glm::translate(glm::mat4(1), reclass(glm::vec3, m_posDat));
-	m_posDat = pos;
 }
 
 void Transformer::scaleBy(float scale)
@@ -170,7 +168,9 @@ void Transformer::setScale(float x, float y, float z)
 
 Coord3D<> Transformer::getPosition()
 {
-	return m_posDat;
+	Coord3D <>tmpPos = m_posDat;
+	tmpPos.z *= -1;
+	return tmpPos;
 }
 
 Coord3D<> Transformer::getRotation()

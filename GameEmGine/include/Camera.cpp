@@ -100,7 +100,6 @@ bool Camera::update()
 			Transformer::translate(m_position);
 		m_position += m_positionBy;
 
-		m_positionBy.z *= -1;
 		if(m_isTranslateBy)
 			Transformer::translateBy(m_positionBy);
 
@@ -138,7 +137,7 @@ void Camera::translate(float x, float y, float z)
 
 void Camera::translate(Coord3D<> position)
 {
-	
+
 	m_position = position;
 	m_positionBy = {0,0,0};
 	m_isTranslate = m_cameraUpdate = true;
@@ -151,7 +150,7 @@ void Camera::translateBy(float x, float y, float z)
 
 void  Camera::translateBy(Coord3D<> position)
 {
-	
+
 	m_positionBy += position;
 	m_isTranslateBy = m_cameraUpdate = true;
 }
@@ -243,7 +242,7 @@ glm::mat4 Camera::getWorldTransformation()
 
 
 #include <algorithm>
-void Camera::render(Shader* shader,const std::unordered_map<void*, Model*>& models, bool trans,bool shadow)
+void Camera::render(Shader* shader, const std::unordered_map<void*, Model*>& models, bool trans, bool shadow)
 {
 
 	std::vector<std::pair<void*, Model*>> models2(models.begin(), models.end());
