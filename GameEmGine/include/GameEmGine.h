@@ -80,21 +80,21 @@ public:
 	/*
 	moves the camera position in pixels
 	*/
-	static void translateCameraBy(Coord3D<> pos);
+	static void translateCameraBy(Vec3 pos);
 	/*
 	sets the camera position in pixels
 	*/
-	static void translateCamera(Coord3D<> pos);
+	static void translateCamera(Vec3 pos);
 
 	/*
 	moves the camera angle
 	*/
-	static void rotateCameraBy(Coord3D<> direction);
+	static void rotateCameraBy(Vec3 direction);
 
 	/*
 		sets the camera angle
 	*/
-	static void rotateCamera(Coord3D<> direction);
+	static void rotateCamera(Vec3 direction);
 
 	//Adds a new model to the draw list
 	static void addModel(Model* model);

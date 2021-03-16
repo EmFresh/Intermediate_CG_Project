@@ -11,7 +11,7 @@ Quat::Quat(float x, float y, float z):w(0), x(x), y(y), z(z)
 Quat::Quat(float w, float x, float y, float z) : w(w), x(x), y(y), z(z)
 {}
 
-Quat::Quat(Coord3D<> rot) : w(0), x(rot.x), y(rot.y), z(rot.z)
+Quat::Quat(Vec3 rot) : w(0), x(rot.x), y(rot.y), z(rot.z)
 {}
 
 Quat Quat::normal()
@@ -45,7 +45,7 @@ Quat& Quat::rotation(float a_ang, float a_dirX, float a_dirY, float a_dirZ)
 	return rot;
 }
 
-Quat& Quat::rotation(float a_ang, Coord3D<> a_dir)
+Quat& Quat::rotation(float a_ang, Vec3 a_dir)
 {
 	return rotation(a_ang, a_dir.x, a_dir.y, a_dir.z);
 }
@@ -61,7 +61,7 @@ void Quat::rotate(float a_ang, float a_dirX, float a_dirY, float a_dirZ)
 	*this = rotation(a_ang, a_dirX, a_dirY, a_dirZ);
 }
 
-void Quat::rotate(float a_ang, Coord3D<> a_dir)
+void Quat::rotate(float a_ang, Vec3 a_dir)
 {
 	rotate(a_ang, a_dir.x, a_dir.y, a_dir.z);
 }
@@ -97,7 +97,7 @@ glm::mat4 Quat::quatRotationMat(float a_ang, float a_dirX, float a_dirY, float a
 			q.x, q.y, q.z, q.w);
 }
 
-glm::mat4 Quat::quatRotationMat(float a_ang, const Coord3D<> a_dir)
+glm::mat4 Quat::quatRotationMat(float a_ang, const Vec3 a_dir)
 {
 	return quatRotationMat(a_ang, a_dir.x, a_dir.y, a_dir.z);
 }

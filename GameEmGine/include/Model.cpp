@@ -9,7 +9,7 @@ Model::Model(Model& model, cstring tag):
 
 }
 
-Model::Model(primitiveMesh* mesh, cstring tag):
+Model::Model(PrimitiveMesh* mesh, cstring tag):
 	Transformer("MODEL"),
 	m_tag(tag)
 {
@@ -42,7 +42,7 @@ void Model::create(Model& model, cstring tag)
 	boundingBoxUpdate();
 }
 
-void Model::create(primitiveMesh* mesh, cstring tag)
+void Model::create(PrimitiveMesh* mesh, cstring tag)
 {
 	m_meshes.push_back(new Mesh());
 	if(strlen(tag))
@@ -119,19 +119,19 @@ void Model::create(cstring path, cstring tag)
 
 /// - Collision Function - ///
 
-bool Model::collision2D(Model* box2, Coord3D<>ignore)
+bool Model::collision2D(Model* box2, Vec3 ignore)
 {
 	return collision2D(this, box2, ignore);
 }
 
-bool Model::collision2D(Model* box1, Model* box2, Coord3D<>RPos)
+bool Model::collision2D(Model* box1, Model* box2, Vec3 RPos)
 {
 
 	RPos.normalize();
-	RPos = (Coord3D<>{1, 1, 1} - RPos);
+	RPos = (Vec3{1, 1, 1} - RPos);
 
 	RPos = (box1->m_center - box2->m_center) * RPos;
-	Coord3D<> AxisX{1,0,0}, AxisY{0,1,0}, AxisZ{0,0,1};
+	Vec3 AxisX{1,0,0}, AxisY{0,1,0}, AxisZ{0,0,1};
 
 	glm::mat4
 		* rotLocal1 = (glm::mat4*)&box1->getLocalRotationMatrix(),
@@ -140,7 +140,7 @@ bool Model::collision2D(Model* box1, Model* box2, Coord3D<>RPos)
 		* rotWorld1 = (glm::mat4*)&box1->getWorldRotationMatrix(),
 		* rotWorld2 = (glm::mat4*)&box2->getWorldRotationMatrix();
 
-	static Coord3D<> AxisX1, AxisY1, AxisZ1, AxisX2, AxisY2, AxisZ2;
+	static Vec3 AxisX1, AxisY1, AxisZ1, AxisX2, AxisY2, AxisZ2;
 	AxisX1 = (*rotWorld1 * (*rotLocal1 * glm::vec4(*(glm::vec3*)&AxisX, 1)));
 	AxisY1 = (*rotWorld1 * (*rotLocal1 * glm::vec4(*(glm::vec3*)&AxisY, 1)));
 	AxisZ1 = (*rotWorld1 * (*rotLocal1 * glm::vec4(*(glm::vec3*)&AxisZ, 1)));
@@ -156,15 +156,15 @@ bool Model::collision2D(Model* box1, Model* box2, Coord3D<>RPos)
 		getSeparatingPlane(RPos, AxisX2, *box1, *box2) ||
 		getSeparatingPlane(RPos, AxisY2, *box1, *box2) ||
 		getSeparatingPlane(RPos, AxisZ2, *box1, *box2) ||
-		getSeparatingPlane(RPos, Coord3D<>::crossProduct(AxisX1, AxisX2), *box1, *box2) ||
-		getSeparatingPlane(RPos, Coord3D<>::crossProduct(AxisX1, AxisY2), *box1, *box2) ||
-		getSeparatingPlane(RPos, Coord3D<>::crossProduct(AxisX1, AxisZ2), *box1, *box2) ||
-		getSeparatingPlane(RPos, Coord3D<>::crossProduct(AxisY1, AxisX2), *box1, *box2) ||
-		getSeparatingPlane(RPos, Coord3D<>::crossProduct(AxisY1, AxisY2), *box1, *box2) ||
-		getSeparatingPlane(RPos, Coord3D<>::crossProduct(AxisY1, AxisZ2), *box1, *box2) ||
-		getSeparatingPlane(RPos, Coord3D<>::crossProduct(AxisZ1, AxisX2), *box1, *box2) ||
-		getSeparatingPlane(RPos, Coord3D<>::crossProduct(AxisZ1, AxisY2), *box1, *box2) ||
-		getSeparatingPlane(RPos, Coord3D<>::crossProduct(AxisZ1, AxisZ2), *box1, *box2));
+		getSeparatingPlane(RPos, Vec3::crossProduct(AxisX1, AxisX2), *box1, *box2) ||
+		getSeparatingPlane(RPos, Vec3::crossProduct(AxisX1, AxisY2), *box1, *box2) ||
+		getSeparatingPlane(RPos, Vec3::crossProduct(AxisX1, AxisZ2), *box1, *box2) ||
+		getSeparatingPlane(RPos, Vec3::crossProduct(AxisY1, AxisX2), *box1, *box2) ||
+		getSeparatingPlane(RPos, Vec3::crossProduct(AxisY1, AxisY2), *box1, *box2) ||
+		getSeparatingPlane(RPos, Vec3::crossProduct(AxisY1, AxisZ2), *box1, *box2) ||
+		getSeparatingPlane(RPos, Vec3::crossProduct(AxisZ1, AxisX2), *box1, *box2) ||
+		getSeparatingPlane(RPos, Vec3::crossProduct(AxisZ1, AxisY2), *box1, *box2) ||
+		getSeparatingPlane(RPos, Vec3::crossProduct(AxisZ1, AxisZ2), *box1, *box2));
 
 }
 
@@ -178,9 +178,9 @@ bool Model::collision3D(Model* k)
 
 bool Model::collision3D(Model* box1, Model* box2)
 {
-	static Coord3D<> RPos;
+	static Vec3 RPos;
 	RPos = box1->m_center - box2->m_center;
-	Coord3D<> AxisX{1,0,0}, AxisY{0,1,0}, AxisZ{0,0,1};
+	Vec3 AxisX{1,0,0}, AxisY{0,1,0}, AxisZ{0,0,1};
 
 	glm::mat4
 		* rotLocal1 = (glm::mat4*)&box1->getLocalRotationMatrix(),
@@ -189,7 +189,7 @@ bool Model::collision3D(Model* box1, Model* box2)
 		* rotWorld1 = (glm::mat4*)&box1->getWorldRotationMatrix(),
 		* rotWorld2 = (glm::mat4*)&box2->getWorldRotationMatrix();
 
-	static Coord3D<> AxisX1, AxisY1, AxisZ1, AxisX2, AxisY2, AxisZ2;
+	static Vec3 AxisX1, AxisY1, AxisZ1, AxisX2, AxisY2, AxisZ2;
 	AxisX1 = (*rotWorld1 * (*rotLocal1 * glm::vec4(*(glm::vec3*)&AxisX, 1)));
 	AxisY1 = (*rotWorld1 * (*rotLocal1 * glm::vec4(*(glm::vec3*)&AxisY, 1)));
 	AxisZ1 = (*rotWorld1 * (*rotLocal1 * glm::vec4(*(glm::vec3*)&AxisZ, 1)));
@@ -205,47 +205,47 @@ bool Model::collision3D(Model* box1, Model* box2)
 		getSeparatingPlane(RPos, AxisX2, *box1, *box2) ||
 		getSeparatingPlane(RPos, AxisY2, *box1, *box2) ||
 		getSeparatingPlane(RPos, AxisZ2, *box1, *box2) ||
-		getSeparatingPlane(RPos, Coord3D<>::crossProduct(AxisX1, AxisX2), *box1, *box2) ||
-		getSeparatingPlane(RPos, Coord3D<>::crossProduct(AxisX1, AxisY2), *box1, *box2) ||
-		getSeparatingPlane(RPos, Coord3D<>::crossProduct(AxisX1, AxisZ2), *box1, *box2) ||
-		getSeparatingPlane(RPos, Coord3D<>::crossProduct(AxisY1, AxisX2), *box1, *box2) ||
-		getSeparatingPlane(RPos, Coord3D<>::crossProduct(AxisY1, AxisY2), *box1, *box2) ||
-		getSeparatingPlane(RPos, Coord3D<>::crossProduct(AxisY1, AxisZ2), *box1, *box2) ||
-		getSeparatingPlane(RPos, Coord3D<>::crossProduct(AxisZ1, AxisX2), *box1, *box2) ||
-		getSeparatingPlane(RPos, Coord3D<>::crossProduct(AxisZ1, AxisY2), *box1, *box2) ||
-		getSeparatingPlane(RPos, Coord3D<>::crossProduct(AxisZ1, AxisZ2), *box1, *box2));
+		getSeparatingPlane(RPos, Vec3::crossProduct(AxisX1, AxisX2), *box1, *box2) ||
+		getSeparatingPlane(RPos, Vec3::crossProduct(AxisX1, AxisY2), *box1, *box2) ||
+		getSeparatingPlane(RPos, Vec3::crossProduct(AxisX1, AxisZ2), *box1, *box2) ||
+		getSeparatingPlane(RPos, Vec3::crossProduct(AxisY1, AxisX2), *box1, *box2) ||
+		getSeparatingPlane(RPos, Vec3::crossProduct(AxisY1, AxisY2), *box1, *box2) ||
+		getSeparatingPlane(RPos, Vec3::crossProduct(AxisY1, AxisZ2), *box1, *box2) ||
+		getSeparatingPlane(RPos, Vec3::crossProduct(AxisZ1, AxisX2), *box1, *box2) ||
+		getSeparatingPlane(RPos, Vec3::crossProduct(AxisZ1, AxisY2), *box1, *box2) ||
+		getSeparatingPlane(RPos, Vec3::crossProduct(AxisZ1, AxisZ2), *box1, *box2));
 }
 
-bool Model::getSeparatingPlane(const Coord3D<>& RPos, const Coord3D<>& plane, Model& box1, Model& box2)
+bool Model::getSeparatingPlane(const Vec3& RPos, const Vec3& plane, Model& box1, Model& box2)
 {
 
 	//RPos;
-	Coord3D<> AxisX{1,0,0}, AxisY{0,1,0}, AxisZ{0,0,1};
+	Vec3 AxisX{1,0,0}, AxisY{0,1,0}, AxisZ{0,0,1};
 
 	glm::mat4
 		* trans1 = (glm::mat4*)&box1.getLocalRotationMatrix(),
 		* trans2 = (glm::mat4*)&box2.getLocalRotationMatrix();
 
-	Coord3D<> AxisX1 = (*trans1 * glm::vec4(*(glm::vec3*)&AxisX, 1));
-	Coord3D<> AxisY1 = (*trans1 * glm::vec4(*(glm::vec3*)&AxisY, 1));
-	Coord3D<> AxisZ1 = (*trans1 * glm::vec4(*(glm::vec3*)&AxisZ, 1));
+	Vec3 AxisX1 = (*trans1 * glm::vec4(*(glm::vec3*)&AxisX, 1));
+	Vec3 AxisY1 = (*trans1 * glm::vec4(*(glm::vec3*)&AxisY, 1));
+	Vec3 AxisZ1 = (*trans1 * glm::vec4(*(glm::vec3*)&AxisZ, 1));
 
-	Coord3D<> AxisX2 = (*trans2 * glm::vec4(*(glm::vec3*)&AxisX, 1));
-	Coord3D<> AxisY2 = (*trans2 * glm::vec4(*(glm::vec3*)&AxisY, 1));
-	Coord3D<> AxisZ2 = (*trans2 * glm::vec4(*(glm::vec3*)&AxisZ, 1));
+	Vec3 AxisX2 = (*trans2 * glm::vec4(*(glm::vec3*)&AxisX, 1));
+	Vec3 AxisY2 = (*trans2 * glm::vec4(*(glm::vec3*)&AxisY, 1));
+	Vec3 AxisZ2 = (*trans2 * glm::vec4(*(glm::vec3*)&AxisZ, 1));
 
 	//float w, h;
 	//glfwGetFramebufferSize(glfwGetCurrentContext(), &w, &h);
 
-	return (fabs(Coord3D<>::dotProduct(RPos, plane)) >
+	return (fabs(Vec3::dotProduct(RPos, plane)) >
 			(
-			fabs(Coord3D<>::dotProduct((AxisX1 * (box1.m_width / 2)), plane)) +
-			fabs(Coord3D<>::dotProduct((AxisY1 * (box1.m_height / 2)), plane)) +
-			fabs(Coord3D<>::dotProduct((AxisZ1 * (box1.m_depth / 2)), plane)) +
+			fabs(Vec3::dotProduct((AxisX1 * (box1.m_width / 2)), plane)) +
+			fabs(Vec3::dotProduct((AxisY1 * (box1.m_height / 2)), plane)) +
+			fabs(Vec3::dotProduct((AxisZ1 * (box1.m_depth / 2)), plane)) +
 
-			fabs(Coord3D<>::dotProduct((AxisX2 * (box2.m_width / 2)), plane)) +
-			fabs(Coord3D<>::dotProduct((AxisY2 * (box2.m_height / 2)), plane)) +
-			fabs(Coord3D<>::dotProduct((AxisZ2 * (box2.m_depth / 2)), plane))
+			fabs(Vec3::dotProduct((AxisX2 * (box2.m_width / 2)), plane)) +
+			fabs(Vec3::dotProduct((AxisY2 * (box2.m_height / 2)), plane)) +
+			fabs(Vec3::dotProduct((AxisZ2 * (box2.m_depth / 2)), plane))
 			));
 }
 
@@ -373,13 +373,13 @@ float Model::getDepth()
 	return m_depth;
 }
 
-Coord3D<> Model::getSize()
+Vec3 Model::getSize()
 {
 
 	return {m_width,m_height,m_depth};
 }
 
-Coord3D<> Model::getCenter()
+Vec3 Model::getCenter()
 {
 
 	return m_center;
@@ -450,7 +450,7 @@ void Model::boundingBoxUpdate()
 		a = getWorldTranslationMatrix() * (getLocalTransformation() * a);
 
 	m_center =
-		(Coord3D<>(
+		(Vec3(
 		bounds[0].x + bounds[1].x,
 		bounds[2].y + bounds[3].y,
 		bounds[4].z + bounds[5].z) / 2);
@@ -606,9 +606,9 @@ void Model::print()
 		, m_tag, m_width, m_height, m_depth, m_center.x, m_center.y, m_center.z);
 }
 
-std::vector<Coord3D<>> Model::getBounds()
+std::vector<Vec3> Model::getBounds()
 {
-	return std::vector<Coord3D<>>{m_topLeftBack,
+	return std::vector<Vec3>{m_topLeftBack,
 		m_topRightBack,
 		m_topLeftFront,
 		m_topRightFront,

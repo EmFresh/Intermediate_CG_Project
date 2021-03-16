@@ -24,11 +24,11 @@ public:
 		FRUSTUM
 	};
 
-	Camera(CAM_TYPE = FRUSTUM, Coord3D<> = {1,1,1});
-	Camera(ProjectionPeramiters* peram, Coord3D<> = {1,1,1});
+	Camera(CAM_TYPE = FRUSTUM, Vec3 = {1,1,1});
+	Camera(ProjectionPeramiters* peram, Vec3 = {1,1,1});
 	~Camera() ;
 
-	void init(Coord3D<> = {}, CAM_TYPE = FRUSTUM, ProjectionPeramiters* peram = nullptr);
+	void init(Vec3 = {}, CAM_TYPE = FRUSTUM, ProjectionPeramiters* peram = nullptr);
 	void setType(CAM_TYPE type, ProjectionPeramiters* peram = nullptr);
 	void setType(ProjectionPeramiters* peram = nullptr);
 	bool update();
@@ -36,9 +36,9 @@ public:
 	/*SET POSITION*/
 
 	void translate(float x, float y, float z);
-	void translate(Coord3D<> pos);
+	void translate(Vec3 pos);
 	void translateBy(float x, float y, float z);
-	void translateBy(Coord3D<> pos);
+	void translateBy(Vec3 pos);
 
 	/*SET SCALE*/
 
@@ -46,9 +46,9 @@ public:
 
 	/*SET ROTATION*/
 
-	void rotate(Coord3D<> angles);
+	void rotate(Vec3 angles);
 	void rotate(float x, float y, float z);
-	void rotateBy(Coord3D<> angles);
+	void rotateBy(Vec3 angles);
 	void rotateBy(float x, float y, float z);
 
 	bool cull(Model*);
@@ -75,7 +75,7 @@ public:
 	bool isUpdated() { return m_cameraUpdate; }
 
 	/*GETTERS*/
-	Coord3D<> getRotation();
+	Vec3 getLocalRotation();
 
 	glm::mat4& getProjectionMatrix();
 	glm::mat4& getViewMatrix();
@@ -92,7 +92,7 @@ protected:
 
 	float m_scale;
 
-	Coord3D<> m_size,
+	Vec3 m_size,
 		m_position, m_positionBy,
 		m_rotate, m_rotateBy,
 		m_camRotation;
@@ -119,7 +119,7 @@ private:
 
 	void scaleBy(float scale) { scale; }
 	void scaleBy(float x, float y, float z) { x, y, z; }
-	void setScale(Coord3D<> scale) { scale; }
+	void setScale(Vec3 scale) { scale; }
 	void setScale(float x, float y, float z) { x, y, z; }
 
 	bool isScaleUpdated() { return false; }

@@ -112,7 +112,7 @@ static inline int vectorWrap(int num, int mod)
 template<class T = float>
 struct Coord2D
 {
-	
+
 	union
 	{
 		struct { T x, y; };
@@ -491,6 +491,9 @@ private:
 
 };
 
+typedef Coord3D<float> Vec3;
+typedef Coord2D<float> Vec2;
+
 struct ColourRGBA
 {
 	GLubyte r, g, b, a;
@@ -661,6 +664,12 @@ struct UV
 	bool operator==(UV uv)
 	{
 		return u == uv.u && v == uv.v;
+	}
+
+	void operator/=(float scale)
+	{
+		u /= scale;
+		v /= scale;
 	}
 };
 

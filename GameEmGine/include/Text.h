@@ -50,7 +50,7 @@ private:
 
 	void scaleBy(float scale) { Transformer::scaleBy(scale); }
 	void scaleBy(float x, float y, float z) { Transformer::scaleBy(x, y, z); }
-	void setScale(Coord3D<> scale) { Transformer::setScale(scale); }
+	void setScale(Vec3 scale) { Transformer::setScale(scale); }
 	void setScale(float scale) { Transformer::setScale(scale); }
 	void setScale(float x, float y, float z) { Transformer::setScale(x, y, z); }
 

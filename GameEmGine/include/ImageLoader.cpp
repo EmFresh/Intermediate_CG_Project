@@ -43,7 +43,7 @@ Texture3D ImageLoader::loadImage3D(cstring LUTfile)
 {
 	Texture3D texture = Texture3D();
 	texture.type = TEXTURE_TYPE3D::LUT;
-	std::vector<Coord3D<>> LUT{};
+	std::vector<Vec3> LUT{};
 
 	//LUTfile = "Texture/CUSTOM.cube";
 	std::ifstream LUTfile2(LUTfile);

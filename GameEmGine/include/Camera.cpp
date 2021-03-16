@@ -1,12 +1,12 @@
 #include "Camera.h"
 
-Camera::Camera(CAM_TYPE type, Coord3D<> size)
+Camera::Camera(CAM_TYPE type, Vec3 size)
 	:Transformer("CAMERA"), m_scale(1), m_projMat(1), m_viewMat(1), m_cameraUpdate(true)
 {
 	//m_position = new Coord3D{-.25,-.5,0};
 	init(size, type, nullptr);
 }
-Camera::Camera(ProjectionPeramiters* peram, Coord3D<> size)
+Camera::Camera(ProjectionPeramiters* peram, Vec3 size)
 	: Transformer("CAMERA"), m_scale(1), m_projMat(1), m_viewMat(1), m_cameraUpdate(true)
 {
 	init(size, peram ? peram->type : CAM_TYPE::NONE, peram);
@@ -17,7 +17,7 @@ Camera::~Camera()
 	delete m_projData;
 }
 
-void Camera::init(Coord3D<> size, CAM_TYPE type, ProjectionPeramiters* peram)
+void Camera::init(Vec3 size, CAM_TYPE type, ProjectionPeramiters* peram)
 {
 	Component::m_type = "CAMERA";
 
@@ -116,14 +116,14 @@ bool Camera::update()
 
 		m_cameraMat = m_projMat * m_viewMat;
 
-		m_rotateBy = m_positionBy = Coord3D<>{0,0,0};
+		m_rotateBy = m_positionBy = Vec3{0,0,0};
 
 
 		m_isRotate = m_isRotateBy =
 			m_isTranslate = m_isTranslateBy =
 			m_cameraUpdate = false;
 
-		m_camRotation = Transformer::getRotation() * Coord3D<>{1, -1, 1};
+		m_camRotation = Transformer::getLocalRotation() * Vec3{1, -1, 1};
 
 		return true;
 	}
@@ -135,7 +135,7 @@ void Camera::translate(float x, float y, float z)
 	translate({x,y,z});
 }
 
-void Camera::translate(Coord3D<> position)
+void Camera::translate(Vec3 position)
 {
 
 	m_position = position;
@@ -148,7 +148,7 @@ void Camera::translateBy(float x, float y, float z)
 	translateBy({x,y,z});
 }
 
-void  Camera::translateBy(Coord3D<> position)
+void  Camera::translateBy(Vec3 position)
 {
 
 	m_positionBy += position;
@@ -161,7 +161,7 @@ void Camera::setScale(const float scale)
 	m_cameraUpdate = true;
 }
 
-void Camera::rotate(Coord3D<> angle)
+void Camera::rotate(Vec3 angle)
 {
 	m_rotate = angle;
 	m_rotateBy = {0,0,0};
@@ -174,7 +174,7 @@ void Camera::rotate(float x, float y, float z)
 	rotate({x,y,z});
 }
 
-void Camera::rotateBy(Coord3D<> angle)
+void Camera::rotateBy(Vec3 angle)
 {
 	m_rotateBy += angle;
 	m_isRotateBy = m_cameraUpdate = true;
@@ -192,7 +192,7 @@ bool Camera::cull(Model* mod)
 	//
 	//glm::vec4 tmp = m_projMat * m_viewMat * mod->getWorldTransformation() * (mod->getLocalTransformation() * glm::vec4(a.toVec3(), 1));
 	//tmp /= tmp.w;
-	//a = reclass(Coord3D<>, tmp);
+	//a = reclass(Vec3, tmp);
 	//if(a.distance() > .5f)
 	//	return true;
 
@@ -251,8 +251,8 @@ void Camera::render(Shader* shader, const std::unordered_map<void*, Model*>& mod
 			  [tmpCam](std::pair<void*, Model*>a, std::pair<void*, Model*>b)->bool
 	{
 		return
-			(b.second->getPosition() - tmpCam->getPosition()).distanceSquare() <
-			(a.second->getPosition() - tmpCam->getPosition()).distanceSquare();
+			(b.second->getLocalPosition() - tmpCam->getLocalPosition()).distanceSquare() <
+			(a.second->getLocalPosition() - tmpCam->getLocalPosition()).distanceSquare();
 	});
 
 	if(shader)
@@ -282,7 +282,7 @@ void Camera::render(Shader* shader, const std::unordered_map<void*, Model*>& mod
 
 }
 
-Coord3D<> Camera::getRotation()
+Vec3 Camera::getLocalRotation()
 {
 	return m_camRotation;
 }

@@ -23,7 +23,7 @@ Mesh::~Mesh()
 		unload();
 }
 
-bool Mesh::loadPrimitive(primitiveMesh* mesh)
+bool Mesh::loadPrimitive(PrimitiveMesh* mesh)
 {
 
 	if(!mesh)

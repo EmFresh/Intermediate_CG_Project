@@ -35,7 +35,7 @@ public:
 
 	void sendUniform(cstring uniform, glm::mat4 val, bool transpose = false);
 	void sendUniform(cstring uniform, glm::vec4 val);
-	void sendUniform(cstring uniform, Coord3D<> val);
+	void sendUniform(cstring uniform, Vec3 val);
 	void sendUniform(cstring uniform, float x, float y, float z);
 	void sendUniform(cstring uniform, float x, float y, float z,float w);
 	void sendUniform(cstring uniform, float val);

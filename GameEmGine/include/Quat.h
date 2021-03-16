@@ -21,9 +21,9 @@ public:
 	Quat();
 	Quat(float x, float y, float z);
 	Quat(float w, float x, float y, float z);
-	Quat(Coord3D<> rot);
+	Quat(Vec3 rot);
 
-	Coord3D<> getCoord()
+	Vec3 getCoord()
 	{
 		return {x,y,z};
 	}
@@ -32,15 +32,15 @@ public:
 	void normalize();
 
 	Quat& rotation(float a_ang, float a_dirX, float a_dirY, float a_dirZ);
-	Quat& rotation(float a_ang, Coord3D<> a_dir);
+	Quat& rotation(float a_ang, Vec3 a_dir);
 
 	Quat& rotation(Quat p, Quat q, Quat qc);
 
 	void rotate(float a_ang, float a_dirX, float a_dirY, float a_dirZ);
-	void rotate(float a_ang, Coord3D<> a_dir);
+	void rotate(float a_ang, Vec3 a_dir);
 
 	static glm::mat4 quatRotationMat(float a_ang, float a_dirX, float a_dirY, float a_dirZ);
-	static glm::mat4 quatRotationMat(float a_ang, const Coord3D<> a_dir);
+	static glm::mat4 quatRotationMat(float a_ang, const Vec3 a_dir);
 	static glm::mat4 quatRotationMat(float a_ang, const glm::vec3 a_dir);
 
 	void print() const;

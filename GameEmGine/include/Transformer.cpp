@@ -41,19 +41,19 @@ void Transformer::enableFPSMode(bool enable)
 	m_fps = enable;
 }
 
-void Transformer::rotate(Coord3D<> angles)
+void Transformer::rotate(Vec3 angles)
 {
 	m_updatedRot = true;
 	m_localRotate = glm::mat4(1);
 
 	if(angles.z)
-		m_localRotate *= Quat::quatRotationMat(-angles.z, Coord3D<>{0, 0, 1});
+		m_localRotate *= Quat::quatRotationMat(-angles.z, Vec3{0, 0, 1});
 
 	if(angles.y)
-		m_localRotate *= Quat::quatRotationMat(-angles.y, Coord3D<>{0, 1, 0});
+		m_localRotate *= Quat::quatRotationMat(-angles.y, Vec3{0, 1, 0});
 
 	if(angles.x)
-		m_localRotate *= Quat::quatRotationMat(angles.x, Coord3D<>{1, 0, 0});
+		m_localRotate *= Quat::quatRotationMat(angles.x, Vec3{1, 0, 0});
 
 
 	m_forward = m_localRotate * glm::vec4(0, 0, 1, 1);
@@ -73,7 +73,7 @@ void Transformer::rotate(float x, float y, float z)
 	Transformer::rotate({x,y,z});
 }
 
-void Transformer::rotateBy(Coord3D<> angles)
+void Transformer::rotateBy(Vec3 angles)
 {
 	m_rotateBy = true;
 	Transformer::rotate(m_rotDat + angles);
@@ -84,7 +84,7 @@ void Transformer::rotateBy(float x, float y, float z)
 	Transformer::rotateBy({x,y,z});
 }
 
-void Transformer::translateBy(Coord3D<> pos)
+void Transformer::translateBy(Vec3 pos)
 {
 	m_updatedTrans = true;
 
@@ -109,10 +109,10 @@ void Transformer::translateBy(float x, float y, float z)
 
 void Transformer::translate(float x, float y, float z)
 {
-	Transformer::translate(Coord3D<>{x, y, z});
+	Transformer::translate(Vec3{x, y, z});
 }
 
-void Transformer::translate(Coord3D<> pos)
+void Transformer::translate(Vec3 pos)
 {
 	m_updatedTrans = true;
 
@@ -136,7 +136,7 @@ void Transformer::scaleBy(float scale)
 
 void Transformer::scaleBy(float x, float y, float z)
 {
-	Transformer::setScale(m_scaleDat * Coord3D<>(x, y, z));
+	Transformer::setScale(m_scaleDat * Vec3(x, y, z));
 }
 
 void Transformer::setScale(float scale)
@@ -144,7 +144,7 @@ void Transformer::setScale(float scale)
 	Transformer::setScale(scale, scale, scale);
 }
 
-void Transformer::setScale(Coord3D<> scale)
+void Transformer::setScale(Vec3 scale)
 {
 	Transformer::setScale(scale.x, scale.y, scale.z);
 }
@@ -166,35 +166,35 @@ void Transformer::setScale(float x, float y, float z)
 	m_localScale = glm::scale(glm::mat4(1), reclass(glm::vec3, m_scaleDat));
 }
 
-Coord3D<> Transformer::getPosition()
+Vec3 Transformer::getLocalPosition()
 {
 	Coord3D <>tmpPos = m_posDat;
 	tmpPos.z *= -1;
 	return tmpPos;
 }
 
-Coord3D<> Transformer::getRotation()
+Vec3 Transformer::getLocalRotation()
 {
 	return m_rotDat;
 }
 
-Coord3D<> Transformer::getScale()
+Vec3 Transformer::getScale()
 {
 	return m_scaleDat;
 }
 
-Coord3D<> Transformer::getForward()
+Vec3 Transformer::getForward()
 {
 
 	return m_forward;
 }
 
-Coord3D<> Transformer::getUp()
+Vec3 Transformer::getUp()
 {
 	return m_up;
 }
 
-Coord3D<> Transformer::getRight()
+Vec3 Transformer::getRight()
 {
 	return m_right;
 }

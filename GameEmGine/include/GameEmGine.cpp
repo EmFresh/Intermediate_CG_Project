@@ -361,8 +361,8 @@ bool GameEmGine::mouseCollision(Model* model)
 
 	Camera* cam = getMainCamera();
 	//	glm::mat4 tmp = glm::inverse(cam->getProjectionMatrix());
-	Coord3D<> mPos = {InputManager::getMousePosition(),0};
-	glm::vec4 direction((mPos * 2 / (Coord3D<>{(float)getWindowSize().x, (float)getWindowSize().y, 500} - 1)).toVec3(), 1);
+	Vec3 mPos = {InputManager::getMousePosition(),0};
+	glm::vec4 direction((mPos * 2 / (Vec3{(float)getWindowSize().x, (float)getWindowSize().y, 500} - 1)).toVec3(), 1);
 	direction = {direction.x,-direction.y,1,1};
 
 
@@ -373,9 +373,9 @@ bool GameEmGine::mouseCollision(Model* model)
 	//position /= position.w;
 
 	//position.z = cam->getPosition().z;
-	mouse.translate(cam->getPosition());
+	mouse.translate(cam->getLocalPosition());
 
-	return mouse.collision2D(model, reclass(Coord3D<>, direction));
+	return mouse.collision2D(model, reclass(Vec3, direction));
 }
 
 void GameEmGine::setCameraType(Camera::CAM_TYPE type)
@@ -388,22 +388,22 @@ void GameEmGine::setCameraType(ProjectionPeramiters* proj)
 	m_mainCamera->setType(proj);
 }
 
-void GameEmGine::translateCameraBy(Coord3D<> pos)
+void GameEmGine::translateCameraBy(Vec3 pos)
 {
 	m_mainCamera->translateBy(pos);
 }
 
-void GameEmGine::translateCamera(Coord3D<> pos)
+void GameEmGine::translateCamera(Vec3 pos)
 {
 	m_mainCamera->translate(pos);
 }
 
-void GameEmGine::rotateCameraBy(Coord3D<> direction)
+void GameEmGine::rotateCameraBy(Vec3 direction)
 {
 	m_mainCamera->rotateBy(direction);
 }
 
-void GameEmGine::rotateCamera(Coord3D<> direction)
+void GameEmGine::rotateCamera(Vec3 direction)
 {
 	m_mainCamera->rotate(direction);
 }

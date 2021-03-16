@@ -53,9 +53,9 @@ bool MeshLoader::load(std::string path)
 	//path.insert(path.begin(), '\"');
 	//path.insert(path.end(), '\"');
 
-	std::vector<Coord3D<>>verts;
+	std::vector<Vec3>verts;
 	std::vector<UV>uvs;
-	std::vector<Coord3D<>>norms;
+	std::vector<Vec3>norms;
 
 	std::map<Indicie, GLuint> indicieMap;
 	unsigned indicieCount = 0;
@@ -109,8 +109,8 @@ bool MeshLoader::load(std::string path)
 						m_meshes.back()->getReplaceTex().insert(m_meshes.back()->getReplaceTex().end(), tmp.size(), 0);
 					}
 
-				indicieMap.clear();
-				indicieCount = 0;
+			//	indicieMap.clear();
+			//	indicieCount = 0;
 
 			}
 
@@ -126,7 +126,7 @@ bool MeshLoader::load(std::string path)
 			else if(strstr(inputBuff, "vn "))
 			{
 				//Normal data
-				Coord3D<> tmp;
+				Vec3 tmp;
 				sscanf_s(inputBuff, "vn %f %f %f", &tmp.x, &tmp.y, &tmp.z);
 				norms.push_back(tmp);
 			}
@@ -139,7 +139,9 @@ bool MeshLoader::load(std::string path)
 				//object
 				m_meshes.push_back(new Mesh);
 				m_meshes.back()->meshName = str;
-
+				initFace = true;
+				indicieMap.clear();
+				indicieCount = 0;
 			}
 
 			else if(strstr(inputBuff, "s "))
@@ -275,7 +277,7 @@ bool MeshLoader::load(std::string path)
 			{
 				//Vertex Data
 
-				Coord3D<> tmp;
+				Vec3 tmp;
 				sscanf_s(inputBuff, "v %f %f %f", &tmp.x, &tmp.y, &tmp.z);
 				verts.push_back(tmp);
 				if(initFace)
@@ -346,7 +348,7 @@ bool MeshLoader::load(std::string path)
 			m_meshes[a]->matNames.clear();
 
 			//Bounds Data 
-			writen = fwrite(&m_meshes[a]->top/*first bound*/, sizeof(Coord3D<>), 6, bin);
+			writen = fwrite(&m_meshes[a]->top/*first bound*/, sizeof(Vec3), 6, bin);
 
 
 		}
@@ -420,7 +422,7 @@ bool MeshLoader::load(std::string path)
 			}
 
 			//bounds data
-			fread(&m_meshes[a]->top, sizeof(Coord3D<>), 6, bin);
+			fread(&m_meshes[a]->top, sizeof(Vec3), 6, bin);
 
 
 		}

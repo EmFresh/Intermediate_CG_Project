@@ -23,14 +23,14 @@ void Physics3D::setGravityMagnitude(float mag)
 	magnitude = mag;
 }
 
-void Physics3D::setGravityDirection(Coord3D<> dir)
+void Physics3D::setGravityDirection(Vec3 dir)
 {
 	direction = dir;
 }
 
 void Physics3D::update()
 {
-	static Coord3D<> tmpDer;
+	static Vec3 tmpDer;
 
 	tmpDer *= direction;
 

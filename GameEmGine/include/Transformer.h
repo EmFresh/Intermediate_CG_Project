@@ -21,34 +21,34 @@ public:
 
 	/*SET ROTATION*/
 
-	virtual void rotate(Coord3D<> angles);
+	virtual void rotate(Vec3 angles);
 	virtual void rotate(float x, float y, float z);
-	virtual void rotateBy(Coord3D<> angles);
+	virtual void rotateBy(Vec3 angles);
 	virtual void rotateBy(float x, float y, float z);
 
 	/*SET POSITION*/
 
 	virtual void translate(float x, float y, float z);
-	virtual void translate(Coord3D<> pos);
+	virtual void translate(Vec3 pos);
 	virtual void translateBy(float x, float y, float z);
-	virtual void translateBy(Coord3D<> pos);
+	virtual void translateBy(Vec3 pos);
 
 
 	/*SET SCALE*/
 
 	virtual void scaleBy(float scale);
 	virtual void scaleBy(float x, float y, float z);
-	virtual void setScale(Coord3D<> scale);
+	virtual void setScale(Vec3 scale);
 	virtual void setScale(float scale);
 	virtual void setScale(float x, float y, float z);
 
 	/*GETTERS*/
-	virtual Coord3D<> getPosition();
-	virtual Coord3D<> getRotation();
-	virtual Coord3D<> getScale();
-	Coord3D<> getForward();
-	Coord3D<> getUp();
-	Coord3D<> getRight();
+	virtual Vec3 getLocalPosition();
+	virtual Vec3 getLocalRotation();
+	virtual Vec3 getScale();
+	Vec3 getForward();
+	Vec3 getUp();
+	Vec3 getRight();
 
 	virtual const glm::mat4& getLocalRotationMatrix();
 	virtual const glm::mat4& getLocalScaleMatrix();
@@ -78,8 +78,8 @@ private:
 	void calculateWorldTranslationMatrix();
 
 
-	Coord3D<> m_forward = {0,0,1}, m_up = {0,1,0}, m_right = {1,0,0};
-	Coord3D<> m_posDat, m_rotDat, m_scaleDat;
+	Vec3 m_forward = {0,0,1}, m_up = {0,1,0}, m_right = {1,0,0};
+	Vec3 m_posDat, m_rotDat, m_scaleDat;
 	
 	bool  m_updatedRot = true,
 		m_updatedTrans = true,

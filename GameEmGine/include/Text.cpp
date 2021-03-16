@@ -187,7 +187,7 @@ void Text::render(Shader& s, Camera* cam, bool texture)
 
 void Text::toTexture(unsigned int width)
 {
-	Coord3D<> tmpSize = getScale();
+	Vec3 tmpSize = getScale();
 
 	float
 		ypos = 0,

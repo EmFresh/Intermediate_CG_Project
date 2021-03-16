@@ -21,13 +21,13 @@ class Model: public Transformer
 public:
 	Model():Transformer("MODEL") {};
 	Model(Model& model, cstring tag = "");
-	Model(primitiveMesh* model, cstring tag = "");
+	Model(PrimitiveMesh* model, cstring tag = "");
 	Model(cstring path, cstring tag = "");
 	virtual ~Model();
 
 
 	void create(Model& model, cstring tag = "");
-	void create(primitiveMesh* mesh, cstring tag = "");
+	void create(PrimitiveMesh* mesh, cstring tag = "");
 	void create(cstring path, cstring tag = "");
 
 	bool collision2D(Model* k, Coord3D<float> ignore);
@@ -38,7 +38,7 @@ public:
 
 	static bool collision3D(Model* l, Model* k);
 
-	static bool getSeparatingPlane(const Coord3D<>& RPos, const Coord3D<>& Plane, Model& box1, Model& box2);
+	static bool getSeparatingPlane(const Vec3& RPos, const Vec3& Plane, Model& box1, Model& box2);
 
 
 	virtual void render(Shader& shader, Camera* cam);
@@ -68,9 +68,9 @@ public:
 	float getWidth();
 	float getHeight();
 	float getDepth();
-	Coord3D<> getSize();
+	Vec3 getSize();
 
-	Coord3D<> getCenter();
+	Vec3 getCenter();
 
 
 	Animation* getAnimation(cstring tag);
@@ -92,7 +92,7 @@ public:
 	bool isCastingShadow();
 	void setWireframe(bool wire);
 	void print();
-	std::vector<Coord3D<>> getBounds();
+	std::vector<Vec3> getBounds();
 protected:
 	ColourRGBA m_colour;
 	void meshCleanUp();
@@ -118,7 +118,7 @@ private:
 	GLuint m_BBVaoID = 0, m_BBVboID = 0;
 	//Transformer m_transform;
 
-	Coord3D<>
+	Vec3
 		m_topLeftBack,
 		m_topRightBack,
 		m_topLeftFront,

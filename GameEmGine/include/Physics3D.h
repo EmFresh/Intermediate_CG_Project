@@ -12,13 +12,13 @@ public:
 
 	void setGravityMagnitude(float);
 
-	void setGravityDirection(Coord3D<>);
+	void setGravityDirection(Vec3);
 
 	void update();
 
 private:
 	Transformer *transform;
-	Coord3D<> direction;
+	Vec3 direction;
 	float magnitude;
 };
 

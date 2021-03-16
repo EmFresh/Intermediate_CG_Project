@@ -68,7 +68,7 @@ void LightManager::shadowRender(unsigned w, unsigned h, FrameBuffer* to, const F
 		if(m_lights[a]->type == Light::TYPE::DIRECTIONAL)
 		{
 
-			cam.translate(-m_lights[a]->getPosition());
+			cam.translate(-m_lights[a]->getLocalPosition());
 
 			//initialize shadow buffer
 			if(!m_shadows)
@@ -111,22 +111,22 @@ void LightManager::shadowRender(unsigned w, unsigned h, FrameBuffer* to, const F
 		//	//	switch(b)
 		//	//	{
 		//	//	case 0:
-		//	//		cam.rotate(90 * Coord3D<>{1, 0, 0});
+		//	//		cam.rotate(90 * Vec3{1, 0, 0});
 		//	//		break;
 		//	//	case 1:
-		//	//		cam.rotate(90 * Coord3D<>{-1, 0, 0});
+		//	//		cam.rotate(90 * Vec3{-1, 0, 0});
 		//	//		break;
 		//	//	case 2:
-		//	//		cam.rotate(90 * Coord3D<>{0, 1, 0});
+		//	//		cam.rotate(90 * Vec3{0, 1, 0});
 		//	//		break;
 		//	//	case 3:
-		//	//		cam.rotate(90 * Coord3D<> {0, -1, 0});
+		//	//		cam.rotate(90 * Vec3 {0, -1, 0});
 		//	//		break;
 		//	//	case 4:
 		//	//		cam.rotate({0, 0, 0});
 		//	//		break;
 		//	//	case 5:
-		//	//		cam.rotate(180 * Coord3D<>{0, -1, 0});
+		//	//		cam.rotate(180 * Vec3{0, -1, 0});
 		//	//		break;
 		//	//	}
 		//}
@@ -209,7 +209,7 @@ void LightManager::update()
 		glm::vec4 dir(0, 0, 1, 1.0f);
 
 
-		pos = m_lights[a]->getWorldTranslationMatrix() * (m_lights[a]->getLocalTranslationMatrix() * glm::vec4(m_lights[a]->getPosition().toVec3(), 1));
+		pos = m_lights[a]->getWorldTranslationMatrix() * (m_lights[a]->getLocalTranslationMatrix() * glm::vec4(m_lights[a]->getLocalPosition().toVec3(), 1));
 		//	pos = m_cam->getProjectionMatrix() * pos;
 		//	pos.z *= -1;
 			//if(pos.w)
@@ -231,13 +231,13 @@ void LightManager::update()
 
 		m_shader->sendUniform("LightType", (int)m_lights[a]->type);
 
-		m_shader->sendUniform("LightAmbient", Coord3D<>{m_lights[a]->ambient[0] / 255.0f, m_lights[a]->ambient[1] / 255.0f, m_lights[a]->ambient[2] / 255.0f});
+		m_shader->sendUniform("LightAmbient", Vec3{m_lights[a]->ambient[0] / 255.0f, m_lights[a]->ambient[1] / 255.0f, m_lights[a]->ambient[2] / 255.0f});
 
-		m_shader->sendUniform("LightDiffuse", Coord3D<>{ m_lights[a]->diffuse[0] / 255.0f, m_lights[a]->diffuse[1] / 255.0f, m_lights[a]->diffuse[2] / 255.0f});
+		m_shader->sendUniform("LightDiffuse", Vec3{ m_lights[a]->diffuse[0] / 255.0f, m_lights[a]->diffuse[1] / 255.0f, m_lights[a]->diffuse[2] / 255.0f});
 
-		m_shader->sendUniform("LightSpecular", Coord3D<>{ m_lights[a]->specular[0] / 255.0f, m_lights[a]->specular[1] / 255.0f, m_lights[a]->specular[2] / 255.0f});
+		m_shader->sendUniform("LightSpecular", Vec3{ m_lights[a]->specular[0] / 255.0f, m_lights[a]->specular[1] / 255.0f, m_lights[a]->specular[2] / 255.0f});
 
-		m_shader->sendUniform("LightDirection", Coord3D<>(dir));
+		m_shader->sendUniform("LightDirection", Vec3(dir));
 
 		m_shader->sendUniform("LightAngleConstraint", m_lights[a]->angleConstraint);
 
