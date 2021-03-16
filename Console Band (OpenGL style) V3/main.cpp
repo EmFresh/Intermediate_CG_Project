@@ -549,6 +549,43 @@ public:
 	}
 };
 
+class Projectile : public Model
+{
+public:
+	Projectile() :Model() {};
+	Projectile(Model& model) :Model(model) {}
+	Projectile(Model& model, cstring tag = "") :Model(model, tag) {}
+	Projectile(PrimitiveMesh* model, cstring tag = "") :Model(model, tag) {}
+	Projectile(cstring path, cstring tag = "") :Model(path, tag) {}
+
+
+	bool active = false;
+	Model* dest;
+
+	void init() {
+		create(new PrimitiveSphere(.5, .5, 10, 10, { 0,.25,0 }));
+		setColour(0.5, 0.1, 0.5);
+		setScale(0.5f);
+		Game::addModel(this);
+	}
+
+	void setEnemy(Model* enemy) {
+		dest = enemy;
+	}
+
+	void update(double dt) {
+		if (!active)return;
+		if (dest==NULL)return;
+
+		Vec3 direction = (dest->getLocalPosition() - getLocalPosition()).normal();
+
+		translateBy(direction * 2 * dt);
+
+	}
+	
+
+};
+
 class BaseTower: public Model
 {
 public:
@@ -558,13 +595,34 @@ public:
 	BaseTower(PrimitiveMesh* model, cstring tag = ""):Model(model, tag) {}
 	BaseTower(cstring path, cstring tag = ""):Model(path, tag) {}
 	void init()
-	{}
+	{
+		
+	}
+	
+
 	void update(double dt)
 	{
+		for (auto p : projs)
+			p->update(dt);
 
+		if (attackWait >= 0.0f) {
+			attackWait -= dt;
+		}
+		else {
+			if (false) //enemy in range
+			{
+				Projectile*  proj = new Projectile;
+				//proj->setEnemy(//enemy Model Pointer); = ;//enemy destination
+				proj->active = true;
+				//send projectile
+				attackWait = 2.0f;
+			}
+		}
 
 	}
-
+	std::vector<Projectile*> projs;
+	float attackWait = 0.0f;
+	float attackRange = 2;
 };
 
 class Point: public Model
@@ -709,8 +767,12 @@ public:
 
 	~GDWGAME()
 	{
-		for(auto& a : baseTowers)
+		for (auto& a : baseTowers) {
+			for (auto& b : a->projs)
+				delete b;
 			delete a;
+		}
+			
 		for(auto& a : otherTowers)
 			delete a;
 		for(auto& a : baseEnemies)
@@ -916,6 +978,9 @@ public:
 
 		for(auto& enemy : baseEnemies)
 			enemy->update((float)dt);
+		for (auto& tower : baseTowers)
+			tower->update(dt);
+
 	}
 };
 
