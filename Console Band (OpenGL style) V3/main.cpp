@@ -549,40 +549,52 @@ public:
 	}
 };
 
-class Projectile : public Model
+bool circleCollisions(Model* m1, Model* m2, float r1, float r2)
+{
+	Vec3 p1 = m1->getLocalPosition() * Vec3 { 1, 0, 1 }, p2 = m2->getLocalPosition() * Vec3 { 1, 0, 1 };
+	if((p1 - p2).distance() <= (r1 + r2))
+		return true;
+	return false;
+}
+
+class Projectile: public Model
 {
 public:
-	Projectile() :Model() {};
-	Projectile(Model& model) :Model(model) {}
-	Projectile(Model& model, cstring tag = "") :Model(model, tag) {}
-	Projectile(PrimitiveMesh* model, cstring tag = "") :Model(model, tag) {}
-	Projectile(cstring path, cstring tag = "") :Model(path, tag) {}
+	Projectile():Model() { init(); };
+	Projectile(Model& model, cstring tag = ""):Model(model, tag) { init(); }
+	Projectile(PrimitiveMesh* model, cstring tag = ""):Model(model, tag) { init(); }
+	Projectile(cstring path, cstring tag = ""):Model(path, tag) { init(); }
 
-
+	float speed = 40;
 	bool active = false;
 	Model* dest;
 
-	void init() {
-		create(new PrimitiveSphere(.5, .5, 10, 10, { 0,.25,0 }));
+	void init()
+	{
+		create(new PrimitiveSphere(1, 1, 10, 10, {0,.25,0}));
 		setColour(0.5, 0.1, 0.5);
-		setScale(0.5f);
+		//setScale(0.5f);
 		Game::addModel(this);
 	}
 
-	void setEnemy(Model* enemy) {
+	void setEnemy(Model* enemy)
+	{
 		dest = enemy;
 	}
 
-	void update(double dt) {
-		if (!active)return;
-		if (dest==NULL)return;
+	void update(double dt)
+	{
+		if(!active)return;
+		if(!dest)return;
+		if((dest->getLocalPosition() - getLocalPosition()).distance() < .2f)active = false;
 
 		Vec3 direction = (dest->getLocalPosition() - getLocalPosition()).normal();
 
-		translateBy(direction * 2 * dt);
+		translateBy(direction * dt * speed);
+
 
 	}
-	
+
 
 };
 
@@ -596,29 +608,54 @@ public:
 	BaseTower(cstring path, cstring tag = ""):Model(path, tag) {}
 	void init()
 	{
-		
+
 	}
-	
+
+	std::vector<Model*> enemyList;
 
 	void update(double dt)
 	{
-		for (auto p : projs)
+		for(auto p : projs)
 			p->update(dt);
 
-		if (attackWait >= 0.0f) {
+		if(attackWait >= 0.0f)
+		{
 			attackWait -= dt;
 		}
-		else {
-			if (false) //enemy in range
+		else
+		{
+			//if(false) //enemy in range
 			{
-				Projectile*  proj = new Projectile;
-				//proj->setEnemy(//enemy Model Pointer); = ;//enemy destination
+				Model* daOne = nullptr;
+				for(auto a = enemyList.rbegin(); a < enemyList.rend(); ++a)
+					if(circleCollisions(*a, this, 3, 6))
+					{
+						daOne = *a;
+						break;
+					}
+
+				if(!daOne)return;
+
+				Projectile* proj = new Projectile;
+				projs.push_back(proj);
+				proj->translate(this->getLocalPosition());
+				proj->setEnemy(daOne);// = ;//enemy destination
 				proj->active = true;
 				//send projectile
-				attackWait = 2.0f;
+				attackWait = 0.6f;
 			}
 		}
 
+		for(auto& p : projs)
+		{
+			if(p->active)continue;
+
+			Model* point = p;
+			projs.erase(std::find(projs.begin(), projs.end(), p));
+			Game::removeModel(point);
+			delete point;
+
+		}
 	}
 	std::vector<Projectile*> projs;
 	float attackWait = 0.0f;
@@ -650,6 +687,7 @@ public:
 	OtherTower(Model& model, cstring tag = ""):Model(model, tag) {}
 	OtherTower(PrimitiveMesh* model, cstring tag = ""):Model(model, tag) {}
 	OtherTower(cstring path, cstring tag = ""):Model(path, tag) {}
+
 	void init()
 	{}
 	void update(double dt)
@@ -665,7 +703,7 @@ class BaseEnemy: public Model
 public:
 
 	bool start = false;
-	float speed = 5;
+	float speed = 15;
 	int currentDest = 0;
 	std::vector<Point*> dests;
 
@@ -767,12 +805,13 @@ public:
 
 	~GDWGAME()
 	{
-		for (auto& a : baseTowers) {
-			for (auto& b : a->projs)
+		for(auto& a : baseTowers)
+		{
+			for(auto& b : a->projs)
 				delete b;
 			delete a;
 		}
-			
+
 		for(auto& a : otherTowers)
 			delete a;
 		for(auto& a : baseEnemies)
@@ -889,11 +928,40 @@ public:
 			Game::addModel(enemiesOther);
 		}
 
+		//basetower
+		baseTowers.resize(1);
+		for(auto& towerBase : baseTowers)
+		{
+			towerBase = new BaseTower;
+			towerBase->create("Models/rocket-ship/rocket ship.obj");
+			towerBase->setScale(0.2f);
+
+			std::vector<Model*>  tmp;
+			towerBase->enemyList.insert(towerBase->enemyList.begin(), baseEnemies.begin(), baseEnemies.end());
+			towerBase->enemyList.insert(towerBase->enemyList.begin(), otherEnemies.begin(), otherEnemies.end());
+
+			Game::addModel(towerBase);
+		}
+
+		//other tower
+		otherTowers.resize(1);
+		for(auto& towerOther : otherTowers)
+		{
+			towerOther = new OtherTower;
+			towerOther->create("Models/Note/note.obj");
+			towerOther->translate(1, 2.f, 0);
+			towerOther->setScale(1.f);
+
+			Game::addModel(towerOther);
+		}
+
+
+
 		//(0.000000, 47.032070, -21.275661)
 		Game::translateCamera({0.0f, 45.0f, -20.0f});
 		Game::rotateCamera({-70.0f, 0.0f, 0.0f});
 		Game::getMainCamera()->enableFPSMode(true);
-	
+
 
 		lit.setLightType(Light::TYPE::DIRECTIONAL);
 		lit.rotate(-15, 0, 0);
@@ -1014,7 +1082,7 @@ public:
 
 		for(auto& enemy : baseEnemies)
 			enemy->update((float)dt);
-		for (auto& tower : baseTowers)
+		for(auto& tower : baseTowers)
 			tower->update(dt);
 
 	}
