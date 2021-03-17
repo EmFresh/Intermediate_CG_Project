@@ -793,18 +793,54 @@ public:
 		int count = 0;
 
 		//points enemies
-		points.resize(8);
+		points.resize(33);
 		for(auto& point : points)
 		{
 			point = new Point;
 			point->create(new PrimitiveSphere(.5, .5, 10, 10, {0,.25,0}));
 			point->setColour(1, 0.5, 0.5);
-			point->translate(!(count % 2) ? -_map.getWidth()*.5 : _map.getWidth() * .5, 0, _map.getDepth() * .5 - ((float)count/points.size() * _map.getDepth()));
+			//point->translate(!(count % 2) ? -_map.getWidth()*.5 : _map.getWidth() * .5, 0, _map.getDepth() * .5 - ((float)count/points.size() * _map.getDepth()));
+			point->translate(Vec3(_map.getWidth(),0, _map.getDepth()));
 			point->setScale(1);
 			Game::addModel(point);
 			++count;
 		}
-
+		{
+			float height = 0.1;
+			points[0]->translate(Vec3((-_map.getWidth() / 2), height, (_map.getDepth() / 2 - (_map.getDepth() / 6)) - 1));
+			points[1]->translate(Vec3((-_map.getWidth() / 2) + 6, height, (_map.getDepth() / 2 - (_map.getDepth() / 6)) - 4));
+			points[2]->translate(Vec3((-_map.getWidth() / 2) + 13, height, (_map.getDepth() / 2 - (_map.getDepth() / 6)) - 4));
+			points[3]->translate(Vec3((-_map.getWidth() / 2) + 16, height, (_map.getDepth() / 2 - (_map.getDepth() / 6))));
+			points[4]->translate(Vec3((-_map.getWidth() / 2) + 23, height, (_map.getDepth() / 2 - (_map.getDepth() / 6) + 2)));
+			points[5]->translate(Vec3((-_map.getWidth() / 2) + 25, height, (_map.getDepth() / 2 - (_map.getDepth() / 6) - 4)));
+			points[6]->translate(Vec3((-_map.getWidth() / 2) + 29, height, (_map.getDepth() / 2 - (_map.getDepth() / 6) - 6)));
+			points[7]->translate(Vec3((-_map.getWidth() / 2) + 32, height, (_map.getDepth() / 2 - (_map.getDepth() / 6) - 9)));
+			points[8]->translate(Vec3((-_map.getWidth() / 2) + 32.5, height, (_map.getDepth() / 2 - (_map.getDepth() / 6) - 14)));
+			points[9]->translate(Vec3((-_map.getWidth() / 2) + 36, height, (_map.getDepth() / 2 - (_map.getDepth() / 6) - 18)));
+			points[10]->translate(Vec3((-_map.getWidth() / 2) + 39, height, (_map.getDepth() / 2 - (_map.getDepth() / 6) - 22)));
+			points[11]->translate(Vec3((-_map.getWidth() / 2) + 39, height, (_map.getDepth() / 2 - (_map.getDepth() / 6) - 25)));
+			points[12]->translate(Vec3((-_map.getWidth() / 2) + 30, height, (_map.getDepth() / 2 - (_map.getDepth() / 6) - 25)));
+			points[13]->translate(Vec3((-_map.getWidth() / 2) + 27, height, (_map.getDepth() / 2 - (_map.getDepth() / 6) - 26)));
+			points[14]->translate(Vec3((-_map.getWidth() / 2) + 25, height, (_map.getDepth() / 2 - (_map.getDepth() / 6) - 24)));
+			points[15]->translate(Vec3((-_map.getWidth() / 2) + 27, height, (_map.getDepth() / 2 - (_map.getDepth() / 6) - 21)));
+			points[16]->translate(Vec3((-_map.getWidth() / 2) + 29, height, (_map.getDepth() / 2 - (_map.getDepth() / 6) - 23)));
+			points[17]->translate(Vec3((-_map.getWidth() / 2) + 27, height, (_map.getDepth() / 2 - (_map.getDepth() / 6) - 26)));
+			points[18]->translate(Vec3((-_map.getWidth() / 2) + 25, height, (_map.getDepth() / 2 - (_map.getDepth() / 6) - 24)));
+			points[19]->translate(Vec3((-_map.getWidth() / 2) + 25, height, (_map.getDepth() / 2 - (_map.getDepth() / 6) - 21)));
+			points[20]->translate(Vec3((-_map.getWidth() / 2) + 24, height, (_map.getDepth() / 2 - (_map.getDepth() / 6) - 18)));
+			points[21]->translate(Vec3((-_map.getWidth() / 2) + 23, height, (_map.getDepth() / 2 - (_map.getDepth() / 6) - 15)));
+			points[22]->translate(Vec3((-_map.getWidth() / 2) + 22, height, (_map.getDepth() / 2 - (_map.getDepth() / 6) - 12)));
+			points[23]->translate(Vec3((-_map.getWidth() / 2) + 19, height, (_map.getDepth() / 2 - (_map.getDepth() / 6) - 13)));
+			points[24]->translate(Vec3((-_map.getWidth() / 2) + 14, height, (_map.getDepth() / 2 - (_map.getDepth() / 6) - 8)));
+			points[25]->translate(Vec3((-_map.getWidth() / 2) + 10, height, (_map.getDepth() / 2 - (_map.getDepth() / 6) - 13)));
+			points[26]->translate(Vec3((-_map.getWidth() / 2) + 10, height, (_map.getDepth() / 2 - (_map.getDepth() / 6) - 15)));
+			points[27]->translate(Vec3((-_map.getWidth() / 2) + 15, height, (_map.getDepth() / 2 - (_map.getDepth() / 6) - 14)));
+			points[28]->translate(Vec3((-_map.getWidth() / 2) + 15, height, (_map.getDepth() / 2 - (_map.getDepth() / 6) - 18)));
+			points[29]->translate(Vec3((-_map.getWidth() / 2) + 13, height, (_map.getDepth() / 2 - (_map.getDepth() / 6) - 21)));
+			points[30]->translate(Vec3((-_map.getWidth() / 2) + 13, height, (_map.getDepth() / 2 - (_map.getDepth() / 6) - 28)));
+			points[31]->translate(Vec3((-_map.getWidth() / 2) + 14, height, (_map.getDepth() / 2 - (_map.getDepth() / 6) - 31)));
+			points[32]->translate(Vec3((-_map.getWidth() / 2) + 16, height, (_map.getDepth() / 2 - (_map.getDepth() / 6) - 35)));
+		}
 		//basetower
 		baseTowers.resize(1);
 		for(auto& towerBase : baseTowers)
