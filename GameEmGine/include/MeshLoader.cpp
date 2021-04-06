@@ -5,7 +5,7 @@
 namespace fs = std::filesystem;
 
 
-std::vector<Mesh*> MeshLoader::m_meshes;
+std::vector<std::shared_ptr<Mesh>> MeshLoader::m_meshes;
 std::vector<std::pair<std::string, std::vector<Texture2D>>> MeshLoader::m_textures;
 
 std::string substr(cstring str, cstring find)
@@ -21,13 +21,13 @@ std::string substr(cstring str, cstring find)
 	return std::string(tmp);
 }
 
-std::vector<Mesh*> MeshLoader::loadMesh(std::string path)
+std::vector<std::shared_ptr<Mesh>> MeshLoader::loadMesh(std::string path)
 {
 	if(!fs::exists("Models/BIN"))
 		system("mkdir \"Models/BIN\"");
 
 	cleanup();
-	if(!load(path))return std::vector<Mesh*>();
+	if(!load(path))return std::vector<std::shared_ptr<Mesh>>();
 
 	for(auto& a : m_meshes)
 		a->init();
@@ -137,7 +137,7 @@ bool MeshLoader::load(std::string path)
 				sscanf_s(inputBuff, "o %s", str, CHAR_BUFF_SIZE);
 
 				//object
-				m_meshes.push_back(new Mesh);
+				m_meshes.push_back(std::shared_ptr<Mesh>(new Mesh));
 				m_meshes.back()->meshName = str;
 				initFace = true;
 				indicieMap.clear();
@@ -376,7 +376,7 @@ bool MeshLoader::load(std::string path)
 
 		for(unsigned int a = 0; a < meshSize; a++)
 		{
-			m_meshes.push_back(new Mesh);
+			m_meshes.push_back(std::shared_ptr<Mesh>(new Mesh));
 
 			//Mesh Name (size of name length + 1 then string)
 			fread(&dataSize, sizeof(unsigned), 1, bin);

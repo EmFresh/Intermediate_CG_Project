@@ -1,18 +1,21 @@
 #include "Model.h" 
 #include <ctime>
 
+#include <GLFW/glfw3.h>
+
 Model::Model(Model& model, cstring tag):
 	Transformer(model, "MODEL"),
 	m_tag(tag)
 {
+	//glfwInit();
 	create(model, tag);
-
 }
 
 Model::Model(PrimitiveMesh* mesh, cstring tag):
 	Transformer("MODEL"),
 	m_tag(tag)
 {
+	//glfwInit();
 	create(mesh, tag);
 }
 
@@ -20,13 +23,14 @@ Model::Model(cstring path, cstring tag):
 	Transformer("MODEL"),
 	m_tag(tag)
 {
+	//glfwInit();
 	create(path, tag);
 }
 
 Model::~Model()
 {
 #if _DEBUG
-	printf("Deleted Model\n");
+	printf("Deleted %s\n", m_type.c_str());
 #endif // _DEBUG
 	if(!m_copy)
 		meshCleanUp();
@@ -44,10 +48,10 @@ void Model::create(Model& model, cstring tag)
 
 void Model::create(PrimitiveMesh* mesh, cstring tag)
 {
-	m_meshes.push_back(new Mesh());
+	m_meshes.push_back(std::shared_ptr<Mesh>(new Mesh()));
 	if(strlen(tag))
 		m_tag = tag;
-	if(m_meshes[0]->loadPrimitive(mesh))
+	if(m_meshes.back()->loadPrimitive(mesh))
 	{
 		m_shaderBB = ResourceManager::getShader("Shaders/BoundingBox.vtsh", "Shaders/BoundingBox.fmsh");
 
@@ -58,6 +62,17 @@ void Model::create(PrimitiveMesh* mesh, cstring tag)
 			right = m_meshes[0]->right.x,
 			front = m_meshes[0]->front.z,
 			back = m_meshes[0]->back.z;
+
+		for(auto& a : m_meshes)
+		{
+			top = top < a->top.y ? a->top.y : top,
+				bottom = bottom>a->bottom.y ? a->bottom.y : bottom,
+				left = left > a->left.x ? a->left.x : left,
+				right = right < a->right.x ? a->right.x : right,
+				front = front< a->front.z ? a->front.z : front,
+				back = back > a->back.z ? a->back.z : back;
+		}
+
 
 		(m_topLeftBack = {left,top,back}),
 			(m_topRightBack = {right,top,back}),
@@ -115,7 +130,15 @@ void Model::create(cstring path, cstring tag)
 	}
 }
 
+void Model::setActive(bool active)
+{
+	m_active = active;
+}
 
+bool Model::isActive()
+{
+	return m_active;
+}
 
 /// - Collision Function - ///
 
@@ -251,6 +274,8 @@ bool Model::getSeparatingPlane(const Vec3& RPos, const Vec3& plane, Model& box1,
 
 void Model::render(Shader& shader, Camera* cam)
 {
+	if(!m_active)return;
+
 	float colour[4]{(float)m_colour.r / 255,(float)m_colour.g / 255,(float)m_colour.b / 255,(float)m_colour.a / 255};
 	m_camera = cam;
 	m_shader = &shader;
@@ -333,8 +358,7 @@ ColourRGBA Model::getColour()
 
 bool Model::loadModel(cstring path)
 {
-	for(auto& a : m_meshes)
-		delete a;
+
 	m_meshes.clear();
 	m_meshes = MeshLoader::loadMesh(path);
 	return !!m_meshes.size();
@@ -353,7 +377,7 @@ void Model::addAnimation(std::string tag, Animation* animation)
 void Model::editVerts(Model* first, Model* second)
 {
 	for(unsigned a = 0; a < first->m_meshes.size(); a++)
-		m_meshes[a]->editVerts(first->m_meshes[a], second->m_meshes[a]);
+		m_meshes[a]->editVerts(first->m_meshes[a].get(), second->m_meshes[a].get());
 
 }
 
@@ -373,7 +397,7 @@ float Model::getDepth()
 	return m_depth;
 }
 
-Vec3 Model::getSize()
+Vec3 Model::getDimentions()
 {
 
 	return {m_width,m_height,m_depth};
@@ -383,6 +407,16 @@ Vec3 Model::getCenter()
 {
 
 	return m_center;
+}
+
+cstring Model::getTag()
+{
+	return m_tag;
+}
+
+void Model::setTag(cstring tag)
+{
+	m_tag = tag;
 }
 
 void Model::boundingBoxUpdate()
@@ -397,21 +431,6 @@ void Model::boundingBoxUpdate()
 		m_shaderBB->disable();
 	}
 
-	//float
-	//	right = m_meshes[0]->right.x,
-	//	left = m_meshes[0]->left.x,
-	//	top = m_meshes[0]->top.y,
-	//	bottom = m_meshes[0]->bottom.y,
-	//	front = m_meshes[0]->front.z,
-	//	back = m_meshes[0]->back.z;
-	//
-	//for(auto& a : m_meshes)
-	//	right = right < a->right.x ? a->right.x : right,
-	//	left = left > a->left.x ? a->left.x : left,
-	//	top = top < a->top.y ? a->top.y : top,
-	//	bottom = bottom>a->bottom.y ? a->bottom.y : bottom,
-	//	front = front< a->front.z ? a->front.z : front,
-	//	back = back > a->back.z ? a->back.z : back;
 
 
 
@@ -473,12 +492,12 @@ void Model::setAnimation(cstring tag)
 
 void Model::addMesh(Mesh* mesh)
 {
-	m_meshes.push_back(mesh);
+	m_meshes.push_back(std::shared_ptr<Mesh>(mesh));
 }
 
 Mesh* Model::getMesh(const unsigned index)
 {
-	return m_meshes[index];
+	return m_meshes[index].get();
 }
 
 Shader* Model::getShader()
@@ -620,9 +639,7 @@ std::vector<Vec3> Model::getBounds()
 
 void Model::meshCleanUp()
 {
-	for(auto& a : m_meshes)
-		if(a)
-			delete a;
-	m_meshes.clear();
+
+	//m_meshes.clear();
 }
 

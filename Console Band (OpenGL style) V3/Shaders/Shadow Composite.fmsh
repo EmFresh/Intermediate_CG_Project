@@ -26,8 +26,8 @@ float calculateShadow()
     float currentDepth = projCoord.z;
     float bias = max(0.007 * (1 - dot(norm, uLightDirection.xyz)), 0.005);
     if(
-        projCoord.x > 1||
-        projCoord.y > 1||
+        projCoord.x >= 1||
+        projCoord.y >= 1||
         !bool(length(texture(uPosition, texcoord).xyz))||
         texture(uShadow,projCoord.xy).r==1
     ) 
@@ -37,7 +37,7 @@ float calculateShadow()
         for(int y = -1; y <= 1; ++y)
         {
             float PCFtDepth = texture(uShadow, projCoord.xy + vec2(x, y) * texelSize).r;
-            shadow += (currentDepth - bias > PCFtDepth ? 0 : 1);
+            shadow += (currentDepth - bias >= PCFtDepth ? 0 : 1);
         }
     shadow *= 0.11111111111111111111111111111111;//shadow / 9(Not sure if this will work)
     

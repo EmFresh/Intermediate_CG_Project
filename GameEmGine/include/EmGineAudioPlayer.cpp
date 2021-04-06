@@ -1,3 +1,4 @@
+//#include "stdafx.h"
 #include "EmGineAudioPlayer.h"
 //#include <iostream>
 #include <string>
@@ -51,10 +52,10 @@ bool EmGineAudioPlayer::createAudio(const char* file, std::string tag)
 		printf("failed to create Audio\n");
 		return false;
 	}
-	m_control->push_back(new AudioControl{newSound,nullptr,new Listener});
+	m_control->push_back(new AudioControl{newSound,nullptr,new Listener,tag});
 
 	printError(m_system->playSound(m_control[0][m_control->size() - 1]->sound, m_mainChannelGroup, true, &m_control->back()->channel), "Line 50");
-	
+
 	return true;
 }
 
@@ -67,9 +68,9 @@ bool EmGineAudioPlayer::createAudioStream(const char* file, std::string tag)
 		return false;
 	}
 
-	m_control->push_back(new AudioControl{newSound,nullptr,new Listener});
+	m_control->push_back(new AudioControl{newSound,nullptr,new Listener,tag});
 	printError(m_system->playSound(m_control[0][m_control->size() - 1]->sound, m_mainChannelGroup, true, &m_control->back()->channel), "Line 64");
-	
+
 	return true;
 }
 
@@ -77,13 +78,17 @@ void EmGineAudioPlayer::play(bool loop, bool newInst, unsigned int index, unsign
 {
 	if(newInst && m_control[0][index])
 		m_control->push_back(m_control[0][index]),
-		m_control->push_back(nullptr),
+		//m_control->push_back(nullptr),
 		index = (unsigned int)m_control->size() - 1;
 
 
 
-	if(!m_control[0][index] || (m_control[0][index] ? isStoped(index) : false))
+	if(!m_control[0][index] || (m_control[0][index] ? (isStoped(index)) : false))
 		printError(m_system->playSound(m_control[0][index]->sound, nullptr, true, &m_control[0][index]->channel), "Line 78");
+	
+	if(newInst)
+		printError(m_system->playSound(m_control[0][index]->sound, nullptr, false, &m_control[0][index]->channel), "Line 78");
+	
 
 	FMOD_MODE mod;
 	if(loop)
@@ -103,9 +108,14 @@ void EmGineAudioPlayer::play(bool loop, bool newInst, unsigned int index, unsign
 void EmGineAudioPlayer::play(std::string tag, bool loop, bool newInstance, unsigned int from, unsigned int to, FMOD_TIMEUNIT unit)
 {
 	int index = 0;
+
 	for(; index < (int)m_control->size(); index++)
 		if(m_control[0][index]->tag == tag)
 			break;
+
+
+	if(index == (int)m_control->size())
+		--index;
 	play(loop, newInstance, index, from, to, unit);
 }
 
@@ -120,7 +130,7 @@ void EmGineAudioPlayer::playAll(bool loop, unsigned int from, unsigned int to, F
 		if(loop)
 		{
 			m_control[0][index]->channel->getMode(&mod);
-			!(mod & FMOD_LOOP_NORMAL) ? 
+			!(mod & FMOD_LOOP_NORMAL) ?
 				printError(m_control[0][index]->channel->setMode(FMOD_LOOP_NORMAL), "Line 108") : void();
 
 			//printError(m_control[0][index]->channel->setMode(FMOD_LOOP_NORMAL), "Line 111");
@@ -203,20 +213,20 @@ void EmGineAudioPlayer::stopAll()
 	cg->setPaused(paused);
 }
 
-unsigned int EmGineAudioPlayer::getPosition(unsigned int index, FMOD_TIMEUNIT type)
+unsigned int EmGineAudioPlayer::getTimePosition(unsigned int index, FMOD_TIMEUNIT type)
 {
 	unsigned int pos;
 	printError(m_control[0][index]->channel->getPosition(&pos, type));
 	return pos;
 }
 
-unsigned int EmGineAudioPlayer::getPosition( std::string tag, FMOD_TIMEUNIT type)
+unsigned int EmGineAudioPlayer::getTimePosition(std::string tag, FMOD_TIMEUNIT type)
 {
 	int index = 0;
 	for(; index < (int)m_control->size(); index++)
 		if(m_control[0][index]->tag == tag)
 			break;
-	return getPosition(type, index);
+	return getTimePosition(type, index);
 }
 
 bool EmGineAudioPlayer::isStoped(unsigned int index)
@@ -325,23 +335,25 @@ void EmGineAudioPlayer::update()
 {
 	for(auto& a : *m_control)
 		a->channel->set3DAttributes(&a->listener->pos, &a->listener->vel);
-	
 
+	cleanup();
 	printError(m_system->update());
 }
 
 void EmGineAudioPlayer::cleanup()
 {
-	bool play;
-
 	for(unsigned a = 0; a < m_control->size(); a++)
 	{
-		AudioChannel* channel = m_control[0][a]->channel;
-		channel->isPlaying(&play);
-		if(!play)
+		//	AudioChannel* channel = m_control[0][a]->channel;
+
+
+
+		if(isStoped(a))
 		{
+
+
 			if(find(m_control->begin() + a + 1, m_control->end(), m_control[0][a]) == m_control->end() &&
-				find(m_control->begin(), m_control->begin() + a, m_control[0][a]) == m_control->begin() + a)
+			   find(m_control->begin(), m_control->begin() + a, m_control[0][a]) == m_control->begin() + a)
 				printError(m_control[0][a]->sound->release());
 
 			m_control->erase(m_control->begin() + a);
@@ -350,6 +362,7 @@ void EmGineAudioPlayer::cleanup()
 	}
 }
 
+#include <windows.h>
 void EmGineAudioPlayer::printError(FMOD_RESULT error, const char* where)
 {
 	error, where;
@@ -357,12 +370,12 @@ void EmGineAudioPlayer::printError(FMOD_RESULT error, const char* where)
 	if(error)
 	{
 		std::string str(FMOD_ErrorString(error));
-		printf(("Error:\n" + str + '\n' + where + "\n\n").c_str());
+		OutputDebugStringA(("Error:\n" + str + '\n' + where + "\n\n").c_str());
 	}
 #endif
 }
 
-FMOD_RESULT F_CALLBACK EmGineAudioPlayer::cleanUpCallback(FMOD_CHANNELCONTROL * chanCtrl, FMOD_CHANNELCONTROL_TYPE ctrlType, FMOD_CHANNELCONTROL_CALLBACK_TYPE callbackType, void* commandData1, void* commandData2)
+FMOD_RESULT F_CALLBACK EmGineAudioPlayer::cleanUpCallback(FMOD_CHANNELCONTROL* chanCtrl, FMOD_CHANNELCONTROL_TYPE ctrlType, FMOD_CHANNELCONTROL_CALLBACK_TYPE callbackType, void* commandData1, void* commandData2)
 {
 	callbackType, commandData1, commandData2;//referenced but not quite needed
 
@@ -397,7 +410,7 @@ FMOD_RESULT F_CALLBACK EmGineAudioPlayer::cleanUpCallback(FMOD_CHANNELCONTROL * 
 }
 
 // for later reference
-FMOD_RESULT F_CALLBACK mycallback(FMOD_CHANNELCONTROL * chanCtrl, FMOD_CHANNELCONTROL_TYPE ctrlType, FMOD_CHANNELCONTROL_CALLBACK_TYPE callbackType, void* commandData1, void* commandData2)
+FMOD_RESULT F_CALLBACK mycallback(FMOD_CHANNELCONTROL* chanCtrl, FMOD_CHANNELCONTROL_TYPE ctrlType, FMOD_CHANNELCONTROL_CALLBACK_TYPE callbackType, void* commandData1, void* commandData2)
 {
 	chanCtrl, callbackType, commandData1, commandData2;//unreferenced
 

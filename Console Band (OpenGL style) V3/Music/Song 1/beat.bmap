@@ -1,0 +1,5 @@
+BPM_SIZE = 1
+#format {time in milliseconds : BPM}
+BPM_LIST = {0 : 105}   
+# this is in milliseconds
+FULL_SONG_LENGTH = ?

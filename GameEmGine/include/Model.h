@@ -4,6 +4,7 @@
 #include <vector>
 #include <string>
 #include <unordered_map>
+#include <memory>
 #include "Camera.h"
 #include "Shader.h"
 #include "Utilities.h"
@@ -29,6 +30,9 @@ public:
 	void create(Model& model, cstring tag = "");
 	void create(PrimitiveMesh* mesh, cstring tag = "");
 	void create(cstring path, cstring tag = "");
+
+	void setActive(bool active);
+	bool isActive();
 
 	bool collision2D(Model* k, Coord3D<float> ignore);
 
@@ -68,10 +72,12 @@ public:
 	float getWidth();
 	float getHeight();
 	float getDepth();
-	Vec3 getSize();
+	Vec3 getDimentions();
 
 	Vec3 getCenter();
 
+	cstring getTag();
+	void setTag(cstring tag);
 
 	Animation* getAnimation(cstring tag);
 	Animation* getCurrentAnimation();
@@ -93,13 +99,15 @@ public:
 	void setWireframe(bool wire);
 	void print();
 	std::vector<Vec3> getBounds();
+	void boundingBoxUpdate();
 protected:
+	bool m_active=true;
+	cstring m_tag;
 	ColourRGBA m_colour;
 	void meshCleanUp();
 
 private:
 	void boundingBoxInit();
-	void boundingBoxUpdate();
 	void drawBoundingBox();
 
 	bool m_useTex = true;
@@ -107,11 +115,10 @@ private:
 	bool m_transparent = false;
 	bool m_wireframe = false;
 	bool m_shadowCast = true;
-	cstring m_tag;
 
 	std::unordered_map< std::string, Animation*>m_animations;
 	std::string m_animation;
-	std::vector<Mesh*> m_meshes;
+	std::vector<std::shared_ptr<Mesh>> m_meshes;
 
 	Camera* m_camera;
 

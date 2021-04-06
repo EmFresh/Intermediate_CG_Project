@@ -146,7 +146,7 @@ private:
 	*/
 
 	/*Custom effects*/
-	static void customRenderCallback(std::function<void(FrameBuffer* gbuff, FrameBuffer* post)>);
+	static void customRenderCallback(std::function<void(FrameBuffer* gbuff, FrameBuffer* post,float dt)>);
 	static void update();
 	static void changeViewport(GLFWwindow* win, int w, int h);
 

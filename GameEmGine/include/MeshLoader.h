@@ -4,7 +4,7 @@
 class MeshLoader
 {
 public:
-	static std::vector<Mesh*> loadMesh(std::string path);
+	static std::vector<std::shared_ptr<Mesh>> loadMesh(std::string path);
 
 private:
 
@@ -30,7 +30,7 @@ private:
 
 	static void cleanup();
 
-	static std::vector<Mesh*> m_meshes;
+	static std::vector<std::shared_ptr<Mesh>> m_meshes;
 	static std::vector<std::pair<std::string, std::vector<Texture2D>>> m_textures;
 	//static std::vector<std::pair<std::string, std::vector<unsigned>>> m_indicieData;
 	//static std::vector<std::vector<Vertex3D>> m_unpackedData;

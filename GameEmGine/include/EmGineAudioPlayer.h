@@ -24,6 +24,27 @@ struct Listener
 
 struct AudioControl
 {
+	//	AudioControl(AudioControl& cpy):tag(cpy.tag),channel(cpy.channel)
+	//	{
+	//		if(cpy.sound)
+	//		{
+	//			sound = new Audio();
+	//			*sound = *cpy.sound;
+	//		}
+	//		if(cpy.listener)
+	//		{
+	//			*listener = *cpy.listener;
+	//		}
+	//		printError(m_system->playSound(sound, m_mainChannelGroup, true, &channel), "Line 64");
+	//
+	//	}
+	//	AudioControl(Audio* asound = nullptr,
+	//				 AudioChannel* achannel = nullptr,
+	//				 Listener* alistener = nullptr,
+	//				 std::string atag = ""):sound(asound), channel(achannel), listener(alistener), tag(atag)
+	//	{}
+	//
+
 	~AudioControl()
 	{
 		//delete sound;
@@ -38,6 +59,7 @@ struct AudioControl
 class EmGineAudioPlayer
 {
 public:
+
 	//MUST be called before using any other function 
 	static void init(int channels = 36);
 
@@ -56,10 +78,10 @@ public:
 
 	//plays a single audio channel created by EmGineAudioPlayer::createAudio/AudioStream()	
 	static void play(bool loop = false, bool newInstance = false, unsigned int index = (m_control->size() - 1),
-		unsigned int from = 0, unsigned int to = 0, FMOD_TIMEUNIT unit = FMOD_TIMEUNIT_MS);
+					 unsigned int from = 0, unsigned int to = 0, FMOD_TIMEUNIT unit = FMOD_TIMEUNIT_MS);
 
 	static void play(std::string tag, bool loop = false, bool newInstance = false,
-		unsigned int from = 0, unsigned int to = 0, FMOD_TIMEUNIT unit = FMOD_TIMEUNIT_MS);
+					 unsigned int from = 0, unsigned int to = 0, FMOD_TIMEUNIT unit = FMOD_TIMEUNIT_MS);
 
 	//plays all existing audio channels created by EmGineAudioPlayer::createAudio/AudioStream()	
 	static void playAll(bool loop = false, unsigned int from = 0, unsigned int to = 0, FMOD_TIMEUNIT unit = FMOD_TIMEUNIT_MS);
@@ -103,8 +125,8 @@ public:
 	static bool isPaused(unsigned int index = (m_control->size() - 1));
 	static bool isPaused(std::string tag = "");
 
-	static unsigned int getPosition(unsigned int index = (m_control->size() - 1), FMOD_TIMEUNIT type = FMOD_TIMEUNIT_MS);
-	static unsigned int getPosition(std::string tag, FMOD_TIMEUNIT type = FMOD_TIMEUNIT_MS);
+	static unsigned int getTimePosition(unsigned int index = (m_control->size() - 1), FMOD_TIMEUNIT type = FMOD_TIMEUNIT_MS);
+	static unsigned int getTimePosition(std::string tag, FMOD_TIMEUNIT type = FMOD_TIMEUNIT_MS);
 
 	//gets the amount of audio channels created
 	static unsigned int size();

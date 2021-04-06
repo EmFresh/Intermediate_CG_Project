@@ -3,16 +3,34 @@
 //#include <crtdbg.h>
 
 #include <GameEmGine.h>
+#include <memory>
+#include "GameObjects.h"
 #include "Song.h"
 #include "Menu.h"
+#include "BeatMapReader.h"
+
 static std::string lutPath = "textures/hot.cube";
+
 class Test: public Scene
 {
+	enum Switches
+	{
+		DefaultScene = 0,
+		Position,
+		Normal,
+		colour,
+		lightAccumulation,
+		post1,
+		post2,
+		post3
+	};
 
 #pragma region Variables
 
 	float speed = 20, angle = 1, bloomThresh = 0.1f;
 	Animation ani;
+
+	Switches toggle = post1;
 
 	Model models[10];
 	Transformer trans[10];
@@ -43,7 +61,6 @@ public:
 		FrustumPeramiters frustum{65,(float)Game::getWindowWidth() / Game::getWindowHeight(),0.001f,500};
 
 		Game::setCameraType(&frustum);
-		//	Game::setCameraType(Camera::CAM_TYPE::ORTHOGRAPHIC);
 		Game::getMainCamera()->enableFPSMode();
 
 		setSkyBox("Skyboxes/space/");
@@ -98,113 +115,152 @@ public:
 		}
 	#pragma endregion
 
+
 		//Create post effects
-		customPostEffect =
-			[&](FrameBuffer* gbuff, FrameBuffer* postBuff)->void
+		customPostEffects =
+			[&](FrameBuffer* gbuff, FrameBuffer* postBuff, float dt)->void
 		{
 			m_greyscaleBuffer->clear();
 			m_buffer1->clear();
 			m_buffer2->clear();
 
-			glViewport(0, 0, Game::getWindowWidth() / 2, Game::getWindowHeight() / 2);
+			static float timer = 0;
+			Shader* filmGrain = ResourceManager::getShader("Shaders/Main Buffer.vtsh", "shaders/filmgrain.fmsh");
 
-			//binds the initial high pass to buffer 1
-			m_buffer1->enable();
-			m_bloomHighPass->enable();
-
-			glActiveTexture(GL_TEXTURE0);
-			glBindTexture(GL_TEXTURE_2D, postBuff->getColorHandle(0));
-
-			m_bloomHighPass->sendUniform("uTex", 0);
-			m_bloomHighPass->sendUniform("uThresh", bloomThresh);
-
-			FrameBuffer::drawFullScreenQuad();
-
-			glActiveTexture(GL_TEXTURE0);
-			glBindTexture(GL_TEXTURE_2D, GL_NONE);
-
-			m_bloomHighPass->disable();
-			m_buffer1->disable();
-
-			//Takes the high pass and blurs it
-			//glViewport(0, 0, Game::getWindowWidth() / 2, Game::getWindowHeight() / 2);
-			for(int a = 0; a < blurPasses; a++)
+			switch(toggle)
 			{
-				m_buffer2->enable();
-				m_blurHorizontal->enable();
-				m_blurHorizontal->sendUniform("uTex", 0);
-				m_blurHorizontal->sendUniform("uPixleSize", 1.0f / Game::getWindowHeight());
-				glBindTexture(GL_TEXTURE_2D, m_buffer1->getColorHandle(0));
+			case post1:
+
+			#pragma region Post 1
+				//glViewport(0, 0, Game::getWindowWidth(), Game::getWindowHeight());
+
+				//Film Grain
+				postBuff->enable();
+				filmGrain->enable();
+
+				glActiveTexture(GL_TEXTURE0);
+				glBindTexture(GL_TEXTURE_2D, postBuff->getColorHandle(0));
+
+				filmGrain->sendUniform("colorMap", 0);
+				filmGrain->sendUniform("time", timer += dt);
+
 				FrameBuffer::drawFullScreenQuad();
 
-				glBindTexture(GL_TEXTURE_2D, GL_NONE);
-				m_blurHorizontal->disable();
+				filmGrain->disable();
+				postBuff->disable();
+			#pragma endregion
+				break;
+			case post2:
+			#pragma region Bloom
+				glViewport(0, 0, Game::getWindowWidth() / 2, Game::getWindowHeight() / 2);
 
-
+				//binds the initial high pass to buffer 1
 				m_buffer1->enable();
-				m_blurVertical->enable();
-				m_blurVertical->sendUniform("uTex", 0);
-				m_blurVertical->sendUniform("uPixleSize", 1.0f / Game::getWindowWidth());
-				glBindTexture(GL_TEXTURE_2D, m_buffer2->getColorHandle(0));
+				m_bloomHighPass->enable();
+
+				glActiveTexture(GL_TEXTURE0);
+				glBindTexture(GL_TEXTURE_2D, postBuff->getColorHandle(0));
+
+				m_bloomHighPass->sendUniform("uTex", 0);
+				m_bloomHighPass->sendUniform("uThresh", bloomThresh);
+
 				FrameBuffer::drawFullScreenQuad();
 
+				glActiveTexture(GL_TEXTURE0);
 				glBindTexture(GL_TEXTURE_2D, GL_NONE);
-				m_blurVertical->disable();
+
+				m_bloomHighPass->disable();
+				m_buffer1->disable();
+
+				//Takes the high pass and blurs it
+				//glViewport(0, 0, Game::getWindowWidth() / 2, Game::getWindowHeight() / 2);
+				for(int a = 0; a < blurPasses; a++)
+				{
+					m_buffer2->enable();
+					m_blurHorizontal->enable();
+					m_blurHorizontal->sendUniform("uTex", 0);
+					m_blurHorizontal->sendUniform("uPixleSize", 1.0f / Game::getWindowHeight());
+					glBindTexture(GL_TEXTURE_2D, m_buffer1->getColorHandle(0));
+					FrameBuffer::drawFullScreenQuad();
+
+					glBindTexture(GL_TEXTURE_2D, GL_NONE);
+					m_blurHorizontal->disable();
+
+
+					m_buffer1->enable();
+					m_blurVertical->enable();
+					m_blurVertical->sendUniform("uTex", 0);
+					m_blurVertical->sendUniform("uPixleSize", 1.0f / Game::getWindowWidth());
+					glBindTexture(GL_TEXTURE_2D, m_buffer2->getColorHandle(0));
+					FrameBuffer::drawFullScreenQuad();
+
+					glBindTexture(GL_TEXTURE_2D, GL_NONE);
+					m_blurVertical->disable();
+				}
+
+				FrameBuffer::disable();//return to base frame buffer
+
+				glViewport(0, 0, Game::getWindowWidth(), Game::getWindowHeight());
+
+				m_greyscaleBuffer->enable();
+				m_blurrComposite->enable();
+				glActiveTexture(GL_TEXTURE0);
+				m_blurrComposite->sendUniform("uScene", 0);
+				glBindTexture(GL_TEXTURE_2D, postBuff->getColorHandle(0));
+
+				glActiveTexture(GL_TEXTURE1);
+				m_blurrComposite->sendUniform("uBloom", 1);
+				glBindTexture(GL_TEXTURE_2D, m_buffer1->getColorHandle(0));
+
+				m_blurrComposite->sendUniform("uBloomEnable", enableBloom);
+				FrameBuffer::drawFullScreenQuad();
+
+				glActiveTexture(GL_TEXTURE1);
+				glBindTexture(GL_TEXTURE_2D, GL_NONE);
+				glActiveTexture(GL_TEXTURE0);
+				glBindTexture(GL_TEXTURE_2D, GL_NONE);
+				m_blurrComposite->disable();
+				m_greyscaleBuffer->disable();
+				m_greyscaleBuffer->moveColourToBuffer(postBuff->getDepthWidth(), postBuff->getDepthWidth(), postBuff);
+			#pragma endregion
+				break;
+			case post3:
+			#pragma region Post 3
+
+			#pragma endregion
+				break;
 			}
 
-			FrameBuffer::disable();//return to base frame buffer
+		#pragma region LUT/Grayscale
+			//	//glClearDepth(1.f);
+			//	//glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
+			//
+			//
+			//	//3D look up table being applied and grayscale
+			//	postBuff->enable();
+			//	m_lutNGrayscaleShader->enable();
+			//
+			//	m_lutNGrayscaleShader->sendUniform("uTex", 0);//previous colour buffer
+			//	m_lutNGrayscaleShader->sendUniform("customTexure", 6);//LUT
+			//	m_lutNGrayscaleShader->sendUniform("lutSize", ResourceManager::getTextureLUT(lutPath.c_str()).lutSize);
+			//	m_lutNGrayscaleShader->sendUniform("lutActive", lutActive);
+			//
+			//	glActiveTexture(GL_TEXTURE0);
+			//	glBindTexture(GL_TEXTURE_2D, postBuff->getColorHandle(0));//previous colour buffer
+			//	glActiveTexture(GL_TEXTURE6);
+			//	glBindTexture(GL_TEXTURE_3D, ResourceManager::getTextureLUT(lutPath.c_str()).id);//LUT
+			//
+			//	FrameBuffer::drawFullScreenQuad();
+			//
+			//	glActiveTexture(GL_TEXTURE0);
+			//	glBindTexture(GL_TEXTURE_2D, GL_NONE);
+			//	glActiveTexture(GL_TEXTURE6);
+			//	glBindTexture(GL_TEXTURE_3D, GL_NONE);
+			//
+			//	m_lutNGrayscaleShader->disable();
+			//	postBuff->disable();
+		#pragma endregion
 
-			glViewport(0, 0, Game::getWindowWidth(), Game::getWindowHeight());
-
-
-			m_greyscaleBuffer->enable();
-			m_blurrComposite->enable();
-			glActiveTexture(GL_TEXTURE0);
-			m_blurrComposite->sendUniform("uScene", 0);
-			glBindTexture(GL_TEXTURE_2D, postBuff->getColorHandle(0));
-
-			glActiveTexture(GL_TEXTURE1);
-			m_blurrComposite->sendUniform("uBloom", 1);
-			glBindTexture(GL_TEXTURE_2D, m_buffer1->getColorHandle(0));
-
-			m_blurrComposite->sendUniform("uBloomEnable", enableBloom);
-			FrameBuffer::drawFullScreenQuad();
-
-			glActiveTexture(GL_TEXTURE1);
-			glBindTexture(GL_TEXTURE_2D, GL_NONE);
-			glActiveTexture(GL_TEXTURE0);
-			glBindTexture(GL_TEXTURE_2D, GL_NONE);
-			m_blurrComposite->disable();
-			m_greyscaleBuffer->disable();
-
-
-			glClearDepth(1.f);
-			glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
-
-
-			//3D look up table being applied and grayscale
-			postBuff->enable();
-			m_lutNGrayscaleShader->enable();
-
-			m_lutNGrayscaleShader->sendUniform("uTex", 0);//previous colour buffer
-			m_lutNGrayscaleShader->sendUniform("customTexure", 6);//LUT
-			m_lutNGrayscaleShader->sendUniform("lutSize", ResourceManager::getTextureLUT(lutPath.c_str()).lutSize);
-			m_lutNGrayscaleShader->sendUniform("lutActive", lutActive);
-
-			glActiveTexture(GL_TEXTURE0);
-			glBindTexture(GL_TEXTURE_2D, m_greyscaleBuffer->getColorHandle(0));//previous colour buffer
-			glActiveTexture(GL_TEXTURE6);
-			glBindTexture(GL_TEXTURE_3D, ResourceManager::getTextureLUT(lutPath.c_str()).id);//LUT
-
-			FrameBuffer::drawFullScreenQuad();
-
-			glActiveTexture(GL_TEXTURE0);
-			glBindTexture(GL_TEXTURE_2D, GL_NONE);
-			glActiveTexture(GL_TEXTURE6);
-			glBindTexture(GL_TEXTURE_3D, GL_NONE);
-
-			m_lutNGrayscaleShader->disable();
-			postBuff->disable();
 		};
 
 
@@ -250,7 +306,7 @@ public:
 		models[1].replaceTexture(0, 0, ResourceManager::getTexture2D("Textures/moon.jpg").id);
 		Game::addModel(&models[1]);
 
-		models[2].create(new PrimitiveSphere({10,10}, 10, 10), "trans Box");
+		models[2].create(new PrimitiveCube({10,10,10}/*, 10, 10*/), "trans Box");
 		models[2].setColour(0, .5f, 0, .75f);
 		models[2].translate(5, 10, 3);
 		models[2].rotate(40, 106, 33);
@@ -268,6 +324,7 @@ public:
 		//tester.rotate({45,-90,0});
 		//LightManager::addLight(&tester);
 	#pragma endregion
+
 
 
 		//Key binds
@@ -535,10 +592,10 @@ public:
 		//		models[a].rotateBy(0, (10 - a) * 5 * dt, 0);
 		//}
 
-		//auto tmpOBJPos = models[0].getPosition();
+		//auto tmpOBJPos = models[0].getLocalPosition();
 		//EmGineAudioPlayer::getAudioControl()[0][0]->listener->pos = *(FMOD_VEC3*)&tmpOBJPos;
 		//
-		//auto tmpPos = Game::getMainCamera()->getPosition();
+		//auto tmpPos = Game::getMainCamera()->getLocalPosition();
 		//auto tmpUp = Game::getMainCamera()->getUp();
 		//auto tmpForward = Game::getMainCamera()->getForward();
 		//EmGineAudioPlayer::getAudioSystem()->set3DListenerAttributes(0, (FMOD_VEC3*)&tmpPos, nullptr, (FMOD_VEC3*)&tmpForward, (FMOD_VEC3*)&tmpUp);
@@ -547,207 +604,11 @@ public:
 
 
 	}
+
+	void onSceneExit() {}
 };
 
-bool circleCollisions(Model* m1, Model* m2, float r1, float r2)
-{
-	Vec3 p1 = m1->getLocalPosition() * Vec3 { 1, 0, 1 }, p2 = m2->getLocalPosition() * Vec3 { 1, 0, 1 };
-	if((p1 - p2).distance() <= (r1 + r2))
-		return true;
-	return false;
-}
-
-class Projectile: public Model
-{
-public:
-	Projectile():Model() { init(); };
-	Projectile(Model& model, cstring tag = ""):Model(model, tag) { init(); }
-	Projectile(PrimitiveMesh* model, cstring tag = ""):Model(model, tag) { init(); }
-	Projectile(cstring path, cstring tag = ""):Model(path, tag) { init(); }
-
-	float speed = 40;
-	bool active = false;
-	Model* dest;
-
-	void init()
-	{
-		create(new PrimitiveSphere(1, 1, 10, 10, {0,.25,0}));
-		setColour(0.5, 0.1, 0.5);
-		//setScale(0.5f);
-		Game::addModel(this);
-	}
-
-	void setEnemy(Model* enemy)
-	{
-		dest = enemy;
-	}
-
-	void update(double dt)
-	{
-		if(!active)return;
-		if(!dest)return;
-		if((dest->getLocalPosition() - getLocalPosition()).distance() < .2f)active = false;
-
-		Vec3 direction = (dest->getLocalPosition() - getLocalPosition()).normal();
-
-		translateBy(direction * dt * speed);
-
-
-	}
-
-
-};
-
-class BaseTower: public Model
-{
-public:
-	BaseTower():Model() {};
-	BaseTower(Model& model):Model(model) {}
-	BaseTower(Model& model, cstring tag = ""):Model(model, tag) {}
-	BaseTower(PrimitiveMesh* model, cstring tag = ""):Model(model, tag) {}
-	BaseTower(cstring path, cstring tag = ""):Model(path, tag) {}
-	void init()
-	{
-
-	}
-
-	std::vector<Model*> enemyList;
-
-	void update(double dt)
-	{
-		for(auto p : projs)
-			p->update(dt);
-
-		if(attackWait >= 0.0f)
-		{
-			attackWait -= dt;
-		}
-		else
-		{
-			//if(false) //enemy in range
-			{
-				Model* daOne = nullptr;
-				for(auto a = enemyList.rbegin(); a < enemyList.rend(); ++a)
-					if(circleCollisions(*a, this, 3, 6))
-					{
-						daOne = *a;
-						break;
-					}
-
-				if(!daOne)return;
-
-				Projectile* proj = new Projectile;
-				projs.push_back(proj);
-				proj->translate(this->getLocalPosition());
-				proj->setEnemy(daOne);// = ;//enemy destination
-				proj->active = true;
-				//send projectile
-				attackWait = 0.6f;
-			}
-		}
-
-		for(auto& p : projs)
-		{
-			if(p->active)continue;
-
-			Model* point = p;
-			projs.erase(std::find(projs.begin(), projs.end(), p));
-			Game::removeModel(point);
-			delete point;
-
-		}
-	}
-	std::vector<Projectile*> projs;
-	float attackWait = 0.0f;
-	float attackRange = 2;
-};
-
-class Point: public Model
-{
-public:
-	Point():Model() {};
-	Point(Model& model, cstring tag = ""):Model(model, tag) {}
-	Point(PrimitiveMesh* model, cstring tag = ""):Model(model, tag) {}
-	Point(cstring path, cstring tag = ""):Model(path, tag) {}
-	void init()
-	{}
-	void update(double dt)
-	{
-
-
-	}
-
-};
-
-class OtherTower: public Model
-{
-public:
-	OtherTower():Model() {};
-	OtherTower(Model& model):Model(model) {}
-	OtherTower(Model& model, cstring tag = ""):Model(model, tag) {}
-	OtherTower(PrimitiveMesh* model, cstring tag = ""):Model(model, tag) {}
-	OtherTower(cstring path, cstring tag = ""):Model(path, tag) {}
-
-	void init()
-	{}
-	void update(double dt)
-	{
-
-
-	}
-
-};
-
-class BaseEnemy: public Model
-{
-public:
-
-	bool start = false;
-	float speed = 15;
-	int currentDest = 0;
-	std::vector<Point*> dests;
-
-
-	BaseEnemy():Model() {};
-	BaseEnemy(Model& model):Model(model) {}
-	BaseEnemy(Model& model, cstring tag = ""):Model(model, tag) {}
-	BaseEnemy(PrimitiveMesh* model, cstring tag = ""):Model(model, tag) {}
-	BaseEnemy(cstring path, cstring tag = ""):Model(path, tag) {}
-
-	void init()
-	{}
-	void update(double dt)
-	{
-		if(!start)return;
-		if(dests.empty())return;
-
-		if((dests[0]->getLocalPosition() - getLocalPosition()).distance() < .1f)dests.erase(dests.begin());
-		if(dests.empty())return;
-
-		Vec3 direction = (dests[0]->getLocalPosition() - getLocalPosition()).normal();
-
-		translateBy(direction * speed * dt);
-	}
-
-};
-
-class OtherEnemy: public Model
-{
-public:
-	OtherEnemy():Model() {};
-	OtherEnemy(Model& model):Model(model) {}
-	OtherEnemy(Model& model, cstring tag = ""):Model(model, tag) {}
-	OtherEnemy(PrimitiveMesh* model, cstring tag = ""):Model(model, tag) {}
-	OtherEnemy(cstring path, cstring tag = ""):Model(path, tag) {}
-	void init()
-	{}
-	void update(double dt)
-	{
-
-
-	}
-
-};
+#pragma region GDW GAME STUFF
 
 class GDWGAME: public Scene
 {
@@ -761,16 +622,15 @@ class GDWGAME: public Scene
 		tab = false, lutActive = false, enableBloom = false, pause = false;
 
 	Model _map;
-	std::vector <BaseTower*> baseTowers;
-	std::vector <OtherTower*> otherTowers;
+	std::vector<std::shared_ptr<Enemy>> enemies;
+	std::vector<std::shared_ptr<Tower>> towers;
 
-	std::vector <BaseEnemy*> baseEnemies;
-	std::vector <OtherEnemy*> otherEnemies;
+	std::vector<std::shared_ptr< WayPoint>> points;
 
-	std::vector<Point*> points;
-
+	std::vector<Beat>beats;
 
 #pragma endregion
+
 public:
 	void cameraMovement(float dt)
 	{
@@ -805,19 +665,7 @@ public:
 
 	~GDWGAME()
 	{
-		for(auto& a : baseTowers)
-		{
-			for(auto& b : a->projs)
-				delete b;
-			delete a;
-		}
 
-		for(auto& a : otherTowers)
-			delete a;
-		for(auto& a : baseEnemies)
-			delete a;
-		for(auto& a : otherEnemies)
-			delete a;
 	}
 
 	void init()
@@ -826,22 +674,32 @@ public:
 		//
 		//	Game::setCameraType(&frustum);
 
-		_map.create(new PrimitivePlane(Coord3D(40.0f, 0.0f, 40.0f)));
+		_map.create(new PrimitivePlane(Vec3(40.0f, 0.0f, 40.0f)));
 		_map.replaceTexture(0, 0, ResourceManager::getTexture2D("Textures/play rug.jpg").id);
 		Game::addModel(&_map);
 		int count = 0;
 
-		//points enemies
+		//Audio
+		AudioPlayer::init();
+
+		if(!AudioPlayer::createAudioStream("Music/song 1/UBI_NEXT_2021.wav"))
+			puts("Audio Not Playing");
+		beats = BeatMapReader::loadBeatMap("Music/song 1/beat.bmap");
+		AudioPlayer::play(true);
+
+		AudioPlayer::setMasterVolume(.5f);
+
+		//enemy waypoints 
 		points.resize(33);
 		for(auto& point : points)
 		{
-			point = new Point;
+			point = std::shared_ptr<WayPoint>(new WayPoint());
 			point->create(new PrimitiveSphere(.5, .5, 10, 10, {0,.25,0}));
 			point->setColour(1, 0.5, 0.5);
 			//point->translate(!(count % 2) ? -_map.getWidth()*.5 : _map.getWidth() * .5, 0, _map.getDepth() * .5 - ((float)count/points.size() * _map.getDepth()));
-			point->translate(Vec3(_map.getWidth(),0, _map.getDepth()));
+			point->translate(Vec3(_map.getWidth(), 0, _map.getDepth()));
 			point->setScale(1);
-			Game::addModel(point);
+			Game::addModel(point.get());
 			++count;
 		}
 		{
@@ -880,84 +738,47 @@ public:
 			points[31]->translate(Vec3((-_map.getWidth() / 2) + 14, height, (_map.getDepth() / 2 - (_map.getDepth() / 6) - 31)));
 			points[32]->translate(Vec3((-_map.getWidth() / 2) + 16, height, (_map.getDepth() / 2 - (_map.getDepth() / 6) - 35)));
 		}
-		//basetower
-		baseTowers.resize(1);
-		for(auto& towerBase : baseTowers)
-		{
-			towerBase = new BaseTower;
-			towerBase->create("Models/rocket-ship/rocket ship.obj");
-			towerBase->setScale(0.2f);
-			//towerBase->setColour(0, 0.025f, 0);
-			Game::addModel(towerBase);
-		}
 
-		//other tower
-		otherTowers.resize(1);
-		for(auto& towerOther : otherTowers)
+		//Towers
+		towers.resize(1);
+		for(auto& tower : towers)
 		{
-			towerOther = new OtherTower;
-			towerOther->create("Models/Note/note.obj");
-			towerOther->translate(1, 2.f, 0);
-			towerOther->setScale(1.f);
-			Game::addModel(towerOther);
-		}
+			//change to do different towers
+			tower = std::shared_ptr<QuarterTower>(new QuarterTower());
 
-		//base enemies
-		baseEnemies.resize(4);
-		for(auto& enemyBase : baseEnemies)
-		{
-			enemyBase = new BaseEnemy;
-			enemyBase->create("Models/ae-86/ae-86.obj");
-			enemyBase->setColour(0.5, 0.5, 1);
-			enemyBase->setScale(0.6f);
-			enemyBase->translate(points[0]->getLocalPosition());
-			Game::addModel(enemyBase);
-		}
-		baseEnemies[0]->dests = points;
-		baseEnemies[0]->start = true;
 
-		//other enemies
-		otherEnemies.resize(1);
-		for(auto& enemiesOther : otherEnemies)
-		{
-			enemiesOther = new OtherEnemy;
-			enemiesOther->create("Models/Note/note.obj");
-			enemiesOther->setColour(0.5, 0.5, 1);
-			enemiesOther->translate(10, 0, -10);
-			enemiesOther->setScale(1);
-			Game::addModel(enemiesOther);
-		}
+			tower->create("Models/rocket-ship/rocket ship.obj");
+			tower->setScale(0.2f);
 
-		//basetower
-		baseTowers.resize(1);
-		for(auto& towerBase : baseTowers)
-		{
-			towerBase = new BaseTower;
-			towerBase->create("Models/rocket-ship/rocket ship.obj");
-			towerBase->setScale(0.2f);
-
+			tower->setEnemyList(&enemies);
+			tower->setSongBPM(beats[0].bpm);
 			std::vector<Model*>  tmp;
-			towerBase->enemyList.insert(towerBase->enemyList.begin(), baseEnemies.begin(), baseEnemies.end());
-			towerBase->enemyList.insert(towerBase->enemyList.begin(), otherEnemies.begin(), otherEnemies.end());
 
-			Game::addModel(towerBase);
-		}
 
-		//other tower
-		otherTowers.resize(1);
-		for(auto& towerOther : otherTowers)
-		{
-			towerOther = new OtherTower;
-			towerOther->create("Models/Note/note.obj");
-			towerOther->translate(1, 2.f, 0);
-			towerOther->setScale(1.f);
-
-			Game::addModel(towerOther);
+			Game::addModel(tower.get());
 		}
 
 
+		////base enemies
+		//enemies.resize(4);
+		//for(auto& enemyBase : enemies)
+		//{
+		//	enemyBase = std::shared_ptr<QuarterEnemy>(new QuarterEnemy());
+		//
+		//	enemyBase->create("Models/ae-86/ae-86.obj");
+		//	enemyBase->setColour(0.5, 0.5, 1);
+		//	enemyBase->setScale(0.6f);
+		//	enemyBase->translate(points[0]->getLocalPosition());
+		//	Game::addModel(enemyBase.get());
+		//}
+		//enemies[0]->setWayPoints(points);
 
-		//(0.000000, 47.032070, -21.275661)
+
+
+
+
+
+		//Lights & Positions
 		Game::translateCamera({0.0f, 45.0f, -20.0f});
 		Game::rotateCamera({-70.0f, 0.0f, 0.0f});
 		Game::getMainCamera()->enableFPSMode(true);
@@ -1080,21 +901,69 @@ public:
 	{
 		cameraMovement((float)dt);
 
-		for(auto& enemy : baseEnemies)
+		static double timer = 0;
+		static int beatOn = 0, lastBeatOn = 0;
+
+		timer = AudioPlayer::getTimePosition(0) * .001;
+		static double bps = 60 / beats[0].bpm * .5;//eighth notes
+
+		if((beatOn = (int)(timer / bps)) != lastBeatOn)
+		{
+			lastBeatOn = beatOn;
+
+			bool rest = rand() % 2;
+
+
+			if(!(beatOn % 16) && !rest)//two whole bars
+				enemies.push_back(std::shared_ptr<WholeEnemy>(new WholeEnemy()));
+			else if(!(beatOn % 2) && !rest)
+				enemies.push_back(std::shared_ptr<QuarterEnemy>(new QuarterEnemy()));
+			else if(!((beatOn) % 1) && !rest)
+				enemies.push_back(std::shared_ptr<EighthEnemy>(new EighthEnemy()));
+
+			if(!rest)
+			{
+				enemies.back()->create("Models/ae-86/ae-86.obj");
+				enemies.back()->setScale(0.6f);
+				Vec3 pos = /*map1.getWayPoints()[0]->getPosition()*/ points[0]->getLocalPosition();
+				enemies.back()->translate(pos);
+				enemies.back()->setActive(true);
+				enemies.back()->setWayPoints(/*map1.getWayPoints()*/points);
+
+				Game::addModel(enemies.back().get());
+			}
+		}
+
+		for(auto& enemy : enemies)
 			enemy->update((float)dt);
-		for(auto& tower : baseTowers)
+		for(auto& tower : towers)
 			tower->update(dt);
 
+		for(auto& a : enemies)
+		{
+			if(!a.get())continue;
+			a->update(dt);
+			if(a->getHealth() <= 0)
+			{
+				Game::removeModel(a.get());
+				enemies.erase(std::find(enemies.begin(), enemies.end(), a));
+			}
+		}
+
+		Tower::bulletUpdate(dt);
 	}
+
+	void onSceneExit() {}
 };
+#pragma endregion
 
 int main()
 {
-	Game::init("Da Game", 1900, 1060);
-	GDWGAME daGame;
-	//Test test;
+	Game::init("Da Game", 800, 600);
+	Test test;
+
 	//Song song;//just another scene... move along
-	Game::setScene(&daGame);
+	Game::setScene(&test);
 	Game::run();
 
 	return 0;

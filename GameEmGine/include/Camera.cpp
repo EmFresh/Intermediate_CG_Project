@@ -40,16 +40,19 @@ void Camera::setType(CAM_TYPE type, ProjectionPeramiters* peram)
 	{
 	case ORTHOGRAPHIC:
 		if(!peram)
-			m_projMat = glm::ortho(-m_size.width * .5f, m_size.width * .5f, -m_size.height * .5f, m_size.height * .5f, 0.f, m_size.depth);
+			m_projMat = glm::ortho(-m_size.width * .5f, m_size.width * .5f,
+								   -m_size.height * .5f, m_size.height * .5f, 0.f, m_size.depth);
 		else
-			m_projMat = glm::ortho(peram1->left, peram1->right, peram1->bottom, peram1->top, peram1->zNear, peram1->zFar);
+			m_projMat = glm::ortho(peram1->left, peram1->right,
+								   peram1->bottom, peram1->top, peram1->zNear, peram1->zFar);
 
 		break;
 	case FRUSTUM:
 		if(!peram)
 			m_projMat = glm::perspective(glm::radians(45.f), m_size.width / m_size.height, .001f, m_size.depth);
 		else
-			m_projMat = glm::perspective(glm::radians(peram2->angle), peram2->aspect ? peram2->aspect : m_size.width / m_size.height, peram2->zNear, peram2->zFar);
+			m_projMat = glm::perspective(glm::radians(peram2->angle),
+										 peram2->aspect ? peram2->aspect : m_size.width / m_size.height, peram2->zNear, peram2->zFar);
 		break;
 	default:
 		m_projMat = glm::mat4(1);
@@ -65,16 +68,19 @@ void Camera::setType(ProjectionPeramiters* peram)
 	{
 	case ORTHOGRAPHIC:
 		if(!peram)
-			m_projMat = glm::ortho(-m_size.width, m_size.width, -m_size.height, m_size.height, -m_size.depth, m_size.depth);
+			m_projMat = glm::ortho(-m_size.width * .5f, m_size.width * .5f,
+								   -m_size.height * .5f, m_size.height * .5f, 0.0f, m_size.depth);
 		else
-			m_projMat = glm::ortho(peram1->left, peram1->right, peram1->bottom, peram1->top, peram1->zNear, peram1->zFar);
+			m_projMat = glm::ortho(peram1->left, peram1->right,
+								   peram1->bottom, peram1->top, peram1->zNear, peram1->zFar);
 
 		break;
 	case FRUSTUM:
 		if(!peram)
 			m_projMat = glm::perspective(glm::radians(45.f), m_size.width / m_size.height, .001f, m_size.depth);
 		else
-			m_projMat = glm::perspective(glm::radians(peram2->angle), peram2->aspect, peram2->zNear, peram2->zFar);
+			m_projMat = glm::perspective(glm::radians(peram2->angle),
+										 peram2->aspect ? peram2->aspect : m_size.width / m_size.height, peram2->zNear, peram2->zFar);
 		break;
 	default:
 		m_projMat = glm::mat4(1);
@@ -123,7 +129,7 @@ bool Camera::update()
 			m_isTranslate = m_isTranslateBy =
 			m_cameraUpdate = false;
 
-		m_camRotation = Transformer::getLocalRotation() * Vec3{1, -1, 1};
+		m_camRotation = Transformer::getLocalRotation() * Vec3 { 1, -1, 1 };
 
 		return true;
 	}
@@ -187,17 +193,37 @@ void Camera::rotateBy(float x, float y, float z)
 
 bool Camera::cull(Model* mod)
 {
-	mod;
-	//auto a = mod->getCenter();
-	//
-	//glm::vec4 tmp = m_projMat * m_viewMat * mod->getWorldTransformation() * (mod->getLocalTransformation() * glm::vec4(a.toVec3(), 1));
-	//tmp /= tmp.w;
-	//a = reclass(Vec3, tmp);
-	//if(a.distance() > .5f)
-	//	return true;
+	mod->boundingBoxUpdate();
+	auto center = mod->getCenter();
+	auto dim = mod->getDimentions();
+
+
+	glm::vec4 tmpTrans = glm::vec4(center.toVec3(), 1);
+
+	tmpTrans = getCameraMatrix() * tmpTrans;
+	tmpTrans /= tmpTrans.w;
+
+	glm::vec4 tmpScale = glm::vec4(dim.toVec3(), 1);
+	tmpScale = getProjectionMatrix() * tmpScale;
+	tmpScale /= tmpScale.w;
+
+	//ushort count=0;
+	if(dim.x)
+		if(abs(tmpTrans.x) >= 1 &&
+		   (abs(tmpTrans.x) - abs(tmpScale.x)) >= 1)
+			return true;
+	if(dim.y)
+		if(abs(tmpTrans.y) >= 1 &&
+		   (abs(tmpTrans.y) - abs(tmpScale.y)) >= 1)
+			return true;
+	if(dim.z)
+		if(abs(tmpTrans.z) >= 1 &&
+		   (abs(tmpTrans.z) - abs(tmpScale.z)) >= 1)
+			return true;
 
 
 	return false;
+
 }
 
 const glm::mat4& Camera::getLocalRotationMatrix()
@@ -251,8 +277,8 @@ void Camera::render(Shader* shader, const std::unordered_map<void*, Model*>& mod
 			  [tmpCam](std::pair<void*, Model*>a, std::pair<void*, Model*>b)->bool
 	{
 		return
-			(b.second->getLocalPosition() - tmpCam->getLocalPosition()).distanceSquare() <
-			(a.second->getLocalPosition() - tmpCam->getLocalPosition()).distanceSquare();
+			(a.second->getLocalPosition() - tmpCam->getLocalPosition()) >
+			(b.second->getLocalPosition() - tmpCam->getLocalPosition());
 	});
 
 	if(shader)

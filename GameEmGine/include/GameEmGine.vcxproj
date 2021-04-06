@@ -72,7 +72,7 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>$(SolutionDir)GameEmGine/include/;$(SolutionDir)Externals\include\;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)GameEmGine\include\;$(SolutionDir)Externals\include\;$(IncludePath)</IncludePath>
     <LibraryPath>$(SolutionDir)Externals\lib\win32\;$(SolutionDir)Externals\lib\;$(LibraryPath)</LibraryPath>
     <OutDir>$(ProjectDir)..\lib\</OutDir>
     <IntDir>$(ProjectDir)..\junck\</IntDir>
@@ -90,7 +90,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>$(SolutionDir)GameEmGine/include/;$(SolutionDir)Externals\include\;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)GameEmGine\include\;$(SolutionDir)Externals\include\;$(IncludePath)</IncludePath>
     <LibraryPath>$(SolutionDir)Externals\lib\win32\;$(SolutionDir)Externals\lib\;$(LibraryPath)</LibraryPath>
     <OutDir>$(ProjectDir)..\lib\</OutDir>
     <IntDir>$(ProjectDir)..\junck\</IntDir>
@@ -119,6 +119,7 @@
       <DisableSpecificWarnings>4201;4505;4002;4238;4706</DisableSpecificWarnings>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <EnablePREfast>false</EnablePREfast>
+      <LanguageStandard_C>stdc17</LanguageStandard_C>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -165,6 +166,7 @@
       <DisableSpecificWarnings>4201;4505;4002;4238;4706</DisableSpecificWarnings>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <EnablePREfast>false</EnablePREfast>
+      <LanguageStandard_C>stdc17</LanguageStandard_C>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>

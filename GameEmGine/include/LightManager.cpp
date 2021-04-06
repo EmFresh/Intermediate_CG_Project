@@ -132,11 +132,13 @@ void LightManager::shadowRender(unsigned w, unsigned h, FrameBuffer* to, const F
 		//}
 
 			//get shadow view
+		//	glDisable(GL_CULL_FACE);
 			glCullFace(GL_FRONT);
 			m_shadows->enable();
 			cam.render(shad, models, false, true);
 			m_shadows->disable();
 			glCullFace(GL_BACK);
+		//	glEnable(GL_CULL_FACE);
 
 
 			//render shadow 
@@ -180,6 +182,11 @@ void LightManager::shadowRender(unsigned w, unsigned h, FrameBuffer* to, const F
 		}
 
 	}
+}
+
+FrameBuffer* LightManager::getShadowBuffer()
+{
+	return m_shadows;
 }
 
 void LightManager::update()

@@ -99,7 +99,7 @@ class Song:public Scene
 
 		AudioPlayer::setMasterVolume(.05f);
 		if(AudioPlayer::size())
-			incriment = (float)AudioPlayer::getPosition(0);
+			incriment = (float)AudioPlayer::getTimePosition(0);
 		start = true;
 	}
 
@@ -646,7 +646,7 @@ class Song:public Scene
 	{
 		cameraMovement();
 		if(AudioPlayer::size())
-			incriment = (float)AudioPlayer::getPosition(0);
+			incriment = (float)AudioPlayer::getTimePosition(0);
 
 		playSongMovement();
 		playButtonPress();

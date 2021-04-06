@@ -3,7 +3,7 @@
 
 #pragma region Static Variables
 void(*m_compileShaders)();
-std::function<void(FrameBuffer* gbuff, FrameBuffer* post)> m_customRender;
+std::function<void(FrameBuffer* gbuff, FrameBuffer* post, float dt)> m_customRender;
 //std::function<void()>GameEmGine::m_render;
 std::function<void(double)>m_gameLoop;
 Camera* m_mainCamera;
@@ -60,10 +60,10 @@ std::string LUTpath;
 
 void GameEmGine::init(std::string name, int width, int height, int x, int y, int monitor, bool fullScreen, bool visable)
 {
-	createNewWindow(name, width, height, x, y, monitor, fullScreen, visable);
 	AudioPlayer::init();
 	InputManager::init();
 
+	createNewWindow(name, width, height, x, y, monitor, fullScreen, visable);
 	tmpRamp = ResourceManager::getTexture2D("textures/Texture Ramp.png");
 
 
@@ -306,6 +306,9 @@ void GameEmGine::fpsLimiter()
 
 void GameEmGine::setScene(Scene* scene)
 {
+	if(m_mainScene)
+		m_mainScene->onSceneExit();
+
 	m_models.clear();
 	m_frameBuffers.clear();
 	LightManager::clear();
@@ -320,7 +323,7 @@ void GameEmGine::setScene(Scene* scene)
 	InputManager::mouseButtonReleasedCallback(scene->mouseReleased);
 	InputManager::mouseButtonAllCallback(scene->mouseInput);
 
-	customRenderCallback([&](FrameBuffer* gbuff, FrameBuffer* post)->void{if(m_mainScene->customPostEffect)m_mainScene->customPostEffect(gbuff, post);  });
+	customRenderCallback([&](FrameBuffer* gbuff, FrameBuffer* post, float dt)->void{if(m_mainScene->customPostEffects)m_mainScene->customPostEffects(gbuff, post, dt);  });
 
 	//m_render = scene->render;
 	m_gameLoop = [&](double a)->void {m_mainScene->update(a); };
@@ -442,7 +445,7 @@ void GameEmGine::enableBloom(bool bloom)
 	m_bloom = bloom;
 }
 
-void GameEmGine::customRenderCallback(std::function<void(FrameBuffer*, FrameBuffer*)>render)
+void GameEmGine::customRenderCallback(std::function<void(FrameBuffer*, FrameBuffer*, float dt)>render)
 {
 	m_customRender = render;
 }
@@ -499,7 +502,7 @@ void GameEmGine::update()
 	m_mainCamera->render(m_gBufferShader, m_models, true);
 	m_gBuffer->disable();
 
-	m_gBuffer->moveSingleColourToBuffer(m_postBuffer->getColourWidth(0), m_postBuffer->getColourHeight(0), m_postBuffer,4);
+	m_gBuffer->moveSingleColourToBuffer(m_postBuffer->getColourWidth(0), m_postBuffer->getColourHeight(0), m_postBuffer, 4);
 	{
 		//store data for later post process
 		m_postBuffer->enable();
@@ -549,8 +552,8 @@ void GameEmGine::update()
 
 	//post effects
 	if(m_customRender)
-		m_customRender(m_gBuffer, m_postBuffer);
-	
+		m_customRender(m_gBuffer, m_postBuffer, (float)glfwGetTime());
+
 	m_postBuffer->moveColourToBackBuffer(getWindowWidth(), getWindowHeight());
 	m_postBuffer->moveDepthToBackBuffer(getWindowWidth(), getWindowHeight());
 
@@ -588,7 +591,7 @@ void GameEmGine::changeViewport(GLFWwindow*, int w, int h)
 
 	m_postBuffer->resizeDepth(w, h);
 	m_postBuffer->resizeColour(0, w, h);
-	
+
 	//m_buffer1->resizeColour(0, unsigned((float)w / SCREEN_RATIO), unsigned((float)h / SCREEN_RATIO));
 	//m_buffer2->resizeColour(0, unsigned((float)w / SCREEN_RATIO), unsigned((float)h / SCREEN_RATIO));
 

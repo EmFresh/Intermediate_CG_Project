@@ -98,6 +98,8 @@ public:
 	/// <param name="gBuffer:">used </param>
 	/// <param name=""></param>
 	static void shadowRender(unsigned w, unsigned h, FrameBuffer* to,const FrameBuffer* gBuffer, const std::unordered_map<void*, Model*>&);
+	static FrameBuffer* getShadowBuffer();
+	
 	//Updates and renders each light
 	static void update();
 	static void clear();

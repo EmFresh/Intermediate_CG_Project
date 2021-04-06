@@ -4,27 +4,23 @@
 class Component
 {
 public:
-//enum COMP_TYPE{UNKNOWN};
+	//enum COMP_TYPE{UNKNOWN};
 	typedef std::string COMP_TYPE;
 private:
-	static std::unordered_map<COMP_TYPE, unsigned> m_compList;
 	std::vector<Component* >m_children;
 	Component* m_parent;
 protected:
-	Component(Component*parent=nullptr) :m_parent(parent){ m_type="UNKNOWN"; m_compList[m_type]++; }
-	Component(COMP_TYPE type, Component* parent = nullptr):m_parent(parent) { m_type=type; m_compList[m_type]++;/*this dose not matter but I did it anyways*/ };
-	virtual ~Component() { --m_compList[m_type]; if(!m_compList[m_type]) m_compList.erase(m_type); };
+	Component(Component* parent = nullptr);
+	Component(COMP_TYPE type, Component* parent = nullptr);
+	virtual ~Component();
 	COMP_TYPE m_type;
 
 public:
-virtual	COMP_TYPE getCompType()
+	virtual	COMP_TYPE getCompType()
 	{
 		return m_type;
 	}
-	static const std::unordered_map<COMP_TYPE, unsigned>& getComponentList()
-	{
-		return m_compList;
-	}
+	static const std::unordered_map<COMP_TYPE, unsigned>& getComponentList();
 
 	virtual void addChild(Component* child);
 	virtual void removeChild(Component* child);

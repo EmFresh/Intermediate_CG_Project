@@ -3,6 +3,7 @@
 #include <GL/glew.h>
 #include <glm/common.hpp>
 #include <string>
+#include <vector>
 #include <map>
 
 #define reclass(a_class,a_val) (*(a_class*)&(a_val))
@@ -107,6 +108,76 @@ static inline int vectorWrap(int num, int mod)
 //	Base* create() { return new Der(); }
 //	typename std::map<Enum, EnumFactory<Enum, Base>*>::iterator pos;
 //};
+
+#include <cmath>
+#include <memory>
+template<class T>
+class ObjectPool
+{
+	uint capacity = 0;
+	uint count = 0;
+	uint current = 0;
+	std::vector<std::shared_ptr<T>> objects;
+
+
+
+public:
+
+	ObjectPool(uint cap = 10) { setCapacity(cap); }
+
+	/// <summary>
+	/// sets the pool capacity
+	/// </summary>
+	/// <param name="cap"></param>
+	void setCapacity(uint cap) { capacity = std::max(cap, (uint)1); count = 0; capacity < objects.size() ? objects.resize(cap) : void(); }
+
+	/// <summary>
+	/// gets the next object in the pool and sets it to default
+	/// </summary>
+	/// <returns></returns>
+	T& getNewObject()
+	{
+		count %= capacity;
+
+		//if(objects.size() > count)
+		//	if(is_pointer<T>::value)
+		//		if(objects[count])
+		//			delete objects[count];
+		//
+		//typename remove_pointer<T>::type type;
+
+		if(count >= objects.size())
+		{
+			//if(is_pointer::value)
+			//	objects.push_back(new type());
+			//else
+
+			objects.push_back(std::shared_ptr<T>(new T()));
+
+		}
+		else
+		{
+			//	if(is_pointer::value)
+			//		objects[count] = new type());
+			//	else
+			*objects[count]  =  T();
+		}
+
+		return *objects[current = count++];
+	}
+
+	/// <summary>
+	/// gets the reference of the current object in the pool
+	/// </summary>
+	/// <returns></returns>
+	T& getCurrentObject() { return *objects[current]; }
+
+	void deleteObject(uint index) { objects.erase(objects.begin() + index); }
+	void deleteObject(T& index) { objects.erase(std::find(objects.begin(), objects.end(), index)); }
+
+	std::vector<std::shared_ptr<T>>& getObjectList() { return objects; }
+};
+
 
 
 template<class T = float>
@@ -461,7 +532,7 @@ struct Coord3D
 	}
 
 	//based on distance
-	bool operator>(Coord3D<T> coord)const
+	bool operator>(Coord3D<T> coord)
 	{
 		return this->distanceSquare() > coord.distanceSquare();
 	}
@@ -471,9 +542,9 @@ struct Coord3D
 		return !(*this > coord);
 	}
 	//based on distance
-	bool operator<(Coord3D<T> coord)const
+	bool operator<(Coord3D<T> coord)
 	{
-		return this->distanceSquare() < coord.distanceSquare();
+		return distanceSquare() < coord.distanceSquare();
 	}
 	//based on distance
 	bool operator>=(Coord3D<T> coord)const
