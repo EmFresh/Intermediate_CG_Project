@@ -7,8 +7,6 @@ typedef GameEmGine Game;
 //some extra utility functions
 namespace util
 {
-
-
 	bool circleCollision(Model* m1, Model* m2, float r1, float r2)
 	{
 		Vec3 p1 = m1->getLocalPosition() * Vec3 { 1, 0, 1 }, p2 = m2->getLocalPosition() * Vec3 { 1, 0, 1 };
@@ -263,7 +261,7 @@ public:
 
 	void setSongBPM(double bpm) { m_bps = 60 / bpm; }
 
-	virtual void init() { bullets.setCapacity(50); };
+	virtual void init() { /*bullets.setCapacity(50);*/ };
 
 	virtual void update(float dt) = 0;
 
@@ -289,7 +287,7 @@ protected:
 
 };
 
-ObjectPool<Projectile> Tower::bullets(0);
+ObjectPool<Projectile> Tower::bullets(50);
 
 
 #include <algorithm>

@@ -9,8 +9,7 @@ std::function<void(double)>m_gameLoop;
 Camera* m_mainCamera;
 std::vector<Camera*>m_cameras;
 Shader
-* m_gBufferShader, * m_postProcessShader,
-* m_forwardRender;
+* m_gBufferShader, * m_postProcessShader/*,* m_forwardRender*/;
 
 FrameBuffer
 * m_gBuffer, * m_postBuffer;
@@ -86,7 +85,6 @@ void GameEmGine::init(std::string name, int width, int height, int x, int y, int
 void GameEmGine::createNewWindow(std::string name, int width, int height, int x, int y, int monitor, bool fullScreen, bool visable)
 {
 	glfwInit();
-
 
 	printf("Creating The Window...\n");
 
@@ -205,6 +203,8 @@ void GameEmGine::run()
 		glFlush();
 		fpsLimiter();
 	}
+	
+	Component::m_exit = true;
 	glfwInit();
 	glfwTerminate();
 }
@@ -259,7 +259,7 @@ void GameEmGine::shaderInit()
 	m_gBufferShader = ResourceManager::getShader("Shaders/DeferredRender.vtsh", "Shaders/DeferredRender.fmsh");
 
 	m_postProcessShader = ResourceManager::getShader("Shaders/Main Buffer.vtsh", "Shaders/PassThrough.frag");
-	m_forwardRender = ResourceManager::getShader("Shaders/DeferredRender.vtsh", "Shaders/ForwardRender.fmsh");
+	//m_forwardRender = ResourceManager::getShader("Shaders/DeferredRender.vtsh", "Shaders/ForwardRender.fmsh");
 
 	Shader::enableUniformErrors(false);
 }
@@ -471,10 +471,10 @@ void GameEmGine::update()
 	glUniformMatrix4fv(m_gBufferShader->getUniformLocation("uProj"), 1, GL_FALSE, &(m_mainCamera->getProjectionMatrix()[0][0]));
 	m_gBufferShader->disable();
 
-	m_forwardRender->enable();
-	glUniformMatrix4fv(m_forwardRender->getUniformLocation("uView"), 1, GL_FALSE, &(m_mainCamera->getViewMatrix()[0][0]));
-	glUniformMatrix4fv(m_forwardRender->getUniformLocation("uProj"), 1, GL_FALSE, &(m_mainCamera->getProjectionMatrix()[0][0]));
-	m_forwardRender->disable();
+	//m_forwardRender->enable();
+	//glUniformMatrix4fv(m_forwardRender->getUniformLocation("uView"), 1, GL_FALSE, &(m_mainCamera->getViewMatrix()[0][0]));
+	//glUniformMatrix4fv(m_forwardRender->getUniformLocation("uProj"), 1, GL_FALSE, &(m_mainCamera->getProjectionMatrix()[0][0]));
+	//m_forwardRender->disable();
 
 
 	LightManager::setCamera(m_mainCamera);

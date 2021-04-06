@@ -6,6 +6,7 @@ class Component
 public:
 	//enum COMP_TYPE{UNKNOWN};
 	typedef std::string COMP_TYPE;
+	static bool m_exit;
 private:
 	std::vector<Component* >m_children;
 	Component* m_parent;

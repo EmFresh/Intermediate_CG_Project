@@ -1,23 +1,25 @@
 #include "Component.h"
 std::unordered_map<Component::COMP_TYPE, unsigned>
 m_compList = std::unordered_map<Component::COMP_TYPE, unsigned>();
+bool Component::m_exit = false;
 
 Component::Component(Component* parent):m_parent(parent)
-{	
+{
 	m_type = "UNKNOWN";
-//	m_compList.find(m_type) != m_compList.end() ? m_compList[m_type]++ : 0;
+	m_compList.find(m_type) != m_compList.end() ? m_compList[m_type]++ : 0;
 }
 
 Component::Component(COMP_TYPE type, Component* parent): m_parent(parent)
 {
 	m_type = type;
-//	m_compList.find(m_type) != m_compList.end() ? m_compList[m_type]++ : 0;/*this dose not matter but I did it anyways*/
+	m_compList.find(m_type) != m_compList.end() ? m_compList[m_type]++ : 0;/*this dose not matter but I did it anyways*/
 }
 
 Component::~Component()
 {
-	if(!(--m_compList[m_type]))
-		m_compList.erase(m_type);
+	if(!m_exit)
+		if(!(--m_compList[m_type]))
+			m_compList.erase(m_type);
 }
 
 

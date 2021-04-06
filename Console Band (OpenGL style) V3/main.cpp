@@ -703,7 +703,7 @@ public:
 			++count;
 		}
 		{
-			float height = 0.1;
+			float height = 0.1f;
 			points[0]->translate(Vec3((-_map.getWidth() / 2), height, (_map.getDepth() / 2 - (_map.getDepth() / 6)) - 1));
 			points[1]->translate(Vec3((-_map.getWidth() / 2) + 6, height, (_map.getDepth() / 2 - (_map.getDepth() / 6)) - 4));
 			points[2]->translate(Vec3((-_map.getWidth() / 2) + 13, height, (_map.getDepth() / 2 - (_map.getDepth() / 6)) - 4));
@@ -712,7 +712,7 @@ public:
 			points[5]->translate(Vec3((-_map.getWidth() / 2) + 25, height, (_map.getDepth() / 2 - (_map.getDepth() / 6) - 4)));
 			points[6]->translate(Vec3((-_map.getWidth() / 2) + 29, height, (_map.getDepth() / 2 - (_map.getDepth() / 6) - 6)));
 			points[7]->translate(Vec3((-_map.getWidth() / 2) + 32, height, (_map.getDepth() / 2 - (_map.getDepth() / 6) - 9)));
-			points[8]->translate(Vec3((-_map.getWidth() / 2) + 32.5, height, (_map.getDepth() / 2 - (_map.getDepth() / 6) - 14)));
+			points[8]->translate(Vec3((-_map.getWidth() / 2) + 32.5f, height, (_map.getDepth() / 2 - (_map.getDepth() / 6) - 14)));
 			points[9]->translate(Vec3((-_map.getWidth() / 2) + 36, height, (_map.getDepth() / 2 - (_map.getDepth() / 6) - 18)));
 			points[10]->translate(Vec3((-_map.getWidth() / 2) + 39, height, (_map.getDepth() / 2 - (_map.getDepth() / 6) - 22)));
 			points[11]->translate(Vec3((-_map.getWidth() / 2) + 39, height, (_map.getDepth() / 2 - (_map.getDepth() / 6) - 25)));
@@ -740,15 +740,29 @@ public:
 		}
 
 		//Towers
-		towers.resize(1);
+		towers.resize(3);
+		count = 0;
 		for(auto& tower : towers)
 		{
 			//change to do different towers
-			tower = std::shared_ptr<QuarterTower>(new QuarterTower());
-
+			int rando = std::rand() % 3;
+			switch(rando)
+			{
+			case 0:
+				tower = std::shared_ptr<QuarterTower>(new QuarterTower());
+				break;
+			case 1:
+				tower = std::shared_ptr<EigthTower>(new EigthTower());
+				break;
+			case 2:
+				tower = std::shared_ptr<WholeTower>(new WholeTower());
+				break;
+			}
 
 			tower->create("Models/rocket-ship/rocket ship.obj");
 			tower->setScale(0.2f);
+
+			tower->translateBy(0, 0, -5.f * count++);
 
 			tower->setEnemyList(&enemies);
 			tower->setSongBPM(beats[0].bpm);
@@ -937,12 +951,12 @@ public:
 		for(auto& enemy : enemies)
 			enemy->update((float)dt);
 		for(auto& tower : towers)
-			tower->update(dt);
+			tower->update((float)dt);
 
 		for(auto& a : enemies)
 		{
 			if(!a.get())continue;
-			a->update(dt);
+			a->update((float)dt);
 			if(a->getHealth() <= 0)
 			{
 				Game::removeModel(a.get());
@@ -950,7 +964,7 @@ public:
 			}
 		}
 
-		Tower::bulletUpdate(dt);
+		Tower::bulletUpdate((float)dt);
 	}
 
 	void onSceneExit() {}
@@ -960,7 +974,7 @@ public:
 int main()
 {
 	Game::init("Da Game", 800, 600);
-	Test test;
+	GDWGAME test;
 
 	//Song song;//just another scene... move along
 	Game::setScene(&test);
