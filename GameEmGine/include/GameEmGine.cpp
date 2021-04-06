@@ -60,10 +60,10 @@ std::string LUTpath;
 
 void GameEmGine::init(std::string name, int width, int height, int x, int y, int monitor, bool fullScreen, bool visable)
 {
+	createNewWindow(name, width, height, x, y, monitor, fullScreen, visable);
 	AudioPlayer::init();
 	InputManager::init();
 
-	createNewWindow(name, width, height, x, y, monitor, fullScreen, visable);
 	tmpRamp = ResourceManager::getTexture2D("textures/Texture Ramp.png");
 
 
