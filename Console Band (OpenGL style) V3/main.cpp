@@ -26,7 +26,6 @@ class Test: public Scene
 	};
 
 #pragma region Variables
-
 	float speed = 20, angle = 1, bloomThresh = 0.1f;
 	Animation ani;
 
@@ -53,7 +52,6 @@ class Test: public Scene
 
 public:
 	int blurPasses = 2;
-
 	void init()
 	{
 		Game::setBackgroundColour(.15f, .15f, .15f);
@@ -632,6 +630,7 @@ class GDWGAME: public Scene
 #pragma endregion
 
 public:
+	float TotalTime = 0.0f;
 	void cameraMovement(float dt)
 	{
 		//// Movement
@@ -913,6 +912,7 @@ public:
 
 	void update(double dt)
 	{
+		TotalTime += dt;
 		cameraMovement((float)dt);
 
 		static double timer = 0;
@@ -943,6 +943,7 @@ public:
 				enemies.back()->translate(pos);
 				enemies.back()->setActive(true);
 				enemies.back()->setWayPoints(/*map1.getWayPoints()*/points);
+				enemies.back()->setSpeed(10 + (TotalTime/30));
 
 				Game::addModel(enemies.back().get());
 			}

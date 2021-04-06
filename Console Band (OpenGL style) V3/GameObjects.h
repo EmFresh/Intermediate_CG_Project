@@ -80,12 +80,12 @@ protected:
 	std::vector<std::shared_ptr<WayPoint>>dests;
 
 public:
-
+	
 	Enemy():Model() {};
 	Enemy(Enemy& model, cstring tag = ""):Model(model, tag) {}
 	Enemy(PrimitiveMesh* sprite, cstring tag = "Model"):Model(sprite, tag) {}
 	Enemy(cstring spriteFile, cstring tag = "Model"):Model(spriteFile, tag) {}
-
+	void setSpeed(float Speed) { speed = Speed; }
 	void addDamage(float dmg) { health -= dmg; }
 	float getHealth() { return health; }
 
