@@ -39,7 +39,8 @@ std::vector<std::shared_ptr<Mesh>> MeshLoader::loadMesh(std::string path)
 
 	return m_meshes;
 }
-
+#include <chrono>
+#include <iomanip>
 bool MeshLoader::load(std::string path)
 {
 
@@ -62,8 +63,10 @@ bool MeshLoader::load(std::string path)
 
 	bool initFace = true;
 #pragma endregion
-
-	if(!fs::exists((path.substr(0, path.find('/') + 1) + "BIN") + path.substr(path.find_last_of('/'), path.find_first_of('.') - path.find_last_of('/') + 1) + "bin"))
+	std::string binPath = (path.substr(0, path.find('/') + 1) + "BIN") + path.substr(path.find_last_of('/'), path.find_first_of('.') - path.find_last_of('/') + 1) + "bin";
+	auto lasttime = fs::last_write_time(binPath);
+	auto lasttime2 = fs::last_write_time(path);
+	if(!fs::exists(binPath) || (lasttime < lasttime2))
 	{
 		//	puts("Load from File\n");
 
@@ -109,8 +112,8 @@ bool MeshLoader::load(std::string path)
 						m_meshes.back()->getReplaceTex().insert(m_meshes.back()->getReplaceTex().end(), tmp.size(), 0);
 					}
 
-			//	indicieMap.clear();
-			//	indicieCount = 0;
+				//	indicieMap.clear();
+				//	indicieCount = 0;
 
 			}
 

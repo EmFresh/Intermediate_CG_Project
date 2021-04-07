@@ -16,7 +16,7 @@ Mesh::Mesh(Mesh& mesh) : Component("MESH")
 Mesh::~Mesh()
 {
 #if _DEBUG
-	printf("Deleted Mesh\n");
+//	printf("Deleted Mesh\n");
 #endif // _DEBUG
 
 	if(!ani)

@@ -95,8 +95,10 @@ public:
 
 	virtual void update(float dt)
 	{
+		//speed = 0;
 		if(!m_active)return;
-		if(dests.empty())return;
+
+		if(dests.empty()) { m_active = false; return; }
 
 		if((dests[0]->getLocalPosition() - getLocalPosition()).distance() <= speed * dt)
 		{
@@ -287,7 +289,7 @@ protected:
 
 };
 
-ObjectPool<Projectile> Tower::bullets(50);
+ObjectPool<Projectile> Tower::bullets(10);
 
 
 #include <algorithm>
@@ -299,6 +301,7 @@ public:
 
 	void init()
 	{
+		setColour(0, 255.0f / 255, 255.f / 255);
 
 		//	m_size = {100,100};
 	}
@@ -320,7 +323,9 @@ public:
 			std::sort(enemyList->rbegin(), enemyList->rend(),
 					  [&](std::shared_ptr<Enemy> a, std::shared_ptr<Enemy> b)->bool{return (getLocalPosition() - a->getLocalPosition()) < (getLocalPosition() - b->getLocalPosition()); });
 			for(; a < enemyList->rend(); ++a)
-				if(util::circleCollision(a->get(), this, std::max(a[0]->getWidth(), a[0]->getDepth()) * .5f, 400))
+				if(util::circleCollision(a->get(), this,
+				   std::max(a[0]->getWidth(), a[0]->getDepth()) * .5f,
+				   std::max(this->getWidth(), this->getHeight()) * 2))
 				{
 
 					if(!AudioPlayer::createAudio("sfx/kick.wav", "kick"))
@@ -362,6 +367,7 @@ public:
 
 	void init()
 	{
+		setColour(255.0f / 255, 255.0f / 255, 0);
 		//	m_size = {100,100};
 	}
 
@@ -388,7 +394,9 @@ public:
 						  [&](std::shared_ptr<Enemy> a, std::shared_ptr<Enemy> b)->bool
 				{return (getLocalPosition() - a->getLocalPosition()) < (getLocalPosition() - b->getLocalPosition()); });
 				for(; a < enemyList->rend(); ++a)
-					if(util::circleCollision((*a).get(), this, std::max((*a)->getWidth(), (*a)->getDepth()) * .5f, 400))
+					if(util::circleCollision(a->get(), this,
+					   std::max(a[0]->getWidth(), a[0]->getDepth()) * .5f,
+					   std::max(this->getWidth(), this->getHeight()) * 2))
 					{
 
 						if(!AudioPlayer::createAudio("sfx/short hat.wav", "kick"))
@@ -426,6 +434,8 @@ public:
 
 	void init()
 	{
+		setColour(255.0f / 255, 128.0f / 255, 0);
+
 		//m_size = {100,100};
 	}
 
@@ -450,7 +460,9 @@ public:
 				std::sort(enemyList->rbegin(), enemyList->rend(),
 						  [&](std::shared_ptr<Enemy> a, std::shared_ptr<Enemy> b)->bool{return (getLocalPosition() - a->getLocalPosition()) < (getLocalPosition() - b->getLocalPosition()); });
 				for(; a < enemyList->rend(); ++a)
-					if(util::circleCollision((*a).get(), this, std::max((*a)->getWidth(), (*a)->getDepth()) * .5f, 400))
+					if(util::circleCollision(a->get(), this,
+					   std::max(a[0]->getWidth(), a[0]->getDepth()) * .5f,
+					   std::max(this->getWidth(), this->getHeight()) * 2))
 					{
 
 						if(!AudioPlayer::createAudio("sfx/clap.wav", "kick"))

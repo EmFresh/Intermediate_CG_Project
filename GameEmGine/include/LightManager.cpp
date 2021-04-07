@@ -133,15 +133,15 @@ void LightManager::shadowRender(unsigned w, unsigned h, FrameBuffer* to, const F
 
 			//get shadow view
 		//	glDisable(GL_CULL_FACE);
-			glCullFace(GL_FRONT);
+			//glCullFace(GL_FRONT);
 			m_shadows->enable();
 			cam.render(shad, models, false, true);
 			m_shadows->disable();
-			glCullFace(GL_BACK);
-		//	glEnable(GL_CULL_FACE);
+			//glCullFace(GL_BACK);
+			//	glEnable(GL_CULL_FACE);
 
 
-			//render shadow 
+				//render shadow 
 			glViewport(0, 0, WindowCreator::getScreenWidth(), WindowCreator::getScreenHeight());
 
 			to->moveDepthToBackBuffer(to->getDepthWidth(), to->getDepthHeight());
@@ -240,9 +240,9 @@ void LightManager::update()
 
 		m_shader->sendUniform("LightAmbient", Vec3{m_lights[a]->ambient[0] / 255.0f, m_lights[a]->ambient[1] / 255.0f, m_lights[a]->ambient[2] / 255.0f});
 
-		m_shader->sendUniform("LightDiffuse", Vec3{ m_lights[a]->diffuse[0] / 255.0f, m_lights[a]->diffuse[1] / 255.0f, m_lights[a]->diffuse[2] / 255.0f});
+		m_shader->sendUniform("LightDiffuse", Vec3{m_lights[a]->diffuse[0] / 255.0f, m_lights[a]->diffuse[1] / 255.0f, m_lights[a]->diffuse[2] / 255.0f});
 
-		m_shader->sendUniform("LightSpecular", Vec3{ m_lights[a]->specular[0] / 255.0f, m_lights[a]->specular[1] / 255.0f, m_lights[a]->specular[2] / 255.0f});
+		m_shader->sendUniform("LightSpecular", Vec3{m_lights[a]->specular[0] / 255.0f, m_lights[a]->specular[1] / 255.0f, m_lights[a]->specular[2] / 255.0f});
 
 		m_shader->sendUniform("LightDirection", Vec3(dir));
 

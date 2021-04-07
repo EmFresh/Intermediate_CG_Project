@@ -2,6 +2,7 @@
 
 uniform sampler2D uNormalMap;
 uniform sampler2D uDepthMap;
+uniform sampler2D uSceneTex;
 uniform vec2 uPixelSize; //x = 1 / WINDOW_WIDTH, y = 1 / WINDOW_HEIGHT
 
 in vec2 texcoord;
@@ -26,14 +27,8 @@ float Sobel_Normal_Horizontal(sampler2D texmap, vec2 texcoord)
 	//x * x + y * y, z * z = length(sum)^2
 	float edgeFactor = dot(sum, sum);
 	
-	if (edgeFactor < 0.7) //Number depends on the scale of the scene
-	{
-		return 1.0;
-	}
-	else
-	{
-		return 0.0;
-	}
+	return float (edgeFactor < 0.9); //Number depends on the scale of the scene
+
 }
 
 float Sobel_Normal_Vertical(sampler2D texmap, vec2 texcoord)
@@ -55,14 +50,8 @@ float Sobel_Normal_Vertical(sampler2D texmap, vec2 texcoord)
 	//x * x + y * y, z * z = length(sum)^2
 	float edgeFactor = dot(sum, sum);
 	
-	if (edgeFactor < 0.7) //Number depends on the scale of the scene
-	{
-		return 1.0;
-	}
-	else
-	{
-		return 0.0;
-	}
+	return float (edgeFactor < 0.9); //Number depends on the scale of the scene
+
 }
 
 float Sobel_Depth_Horizontal(sampler2D texmap, vec2 texcoord)
@@ -81,14 +70,8 @@ float Sobel_Depth_Horizontal(sampler2D texmap, vec2 texcoord)
 	sum += texture(texmap, vec2(texcoord.x + uPixelSize.x, texcoord.y - uPixelSize.y)).r;
 	//The sum should be 0 if there is no contrast ^
 	
-	if (sum < 0.05) //THreshold number depends on the scale of the scene
-	{
-		return 1.0;
-	}
-	else
-	{
-		return 0.0;
-	}
+	return float (sum < 0.005); //THreshold number depends on the scale of the scene
+
 }
 
 float Sobel_Depth_Vertical(sampler2D texmap, vec2 texcoord)
@@ -107,14 +90,8 @@ float Sobel_Depth_Vertical(sampler2D texmap, vec2 texcoord)
 	sum -= texture(texmap, vec2(texcoord.x + uPixelSize.x, texcoord.y - uPixelSize.y)).r;
 	//The sum should be 0 if there is no contrast ^
 	
-	if (sum < 0.05) //Number depends on the scale of the scene
-	{
-		return 1.0;
-	}
-	else
-	{
-		return 0.0;
-	}
+	return float (sum < 0.005); //Number depends on the scale of the scene
+
 }
 
 void main()
@@ -123,7 +100,7 @@ void main()
 	float depthSobel = Sobel_Depth_Horizontal(uDepthMap, texcoord) * Sobel_Depth_Vertical(uDepthMap, texcoord);
 	float normalSobel = Sobel_Normal_Horizontal(uNormalMap, texcoord) * Sobel_Normal_Vertical(uNormalMap, texcoord);
 
-	outEdge = vec4(depthSobel * normalSobel);
+	outEdge = texture(uSceneTex,texcoord)* vec4(depthSobel * normalSobel);
 
 	outEdge.a = 1;
 }

@@ -1,0 +1,20 @@
+#version 420
+
+uniform sampler2D usceneTex; // 0
+uniform float gamma = 0.6; // 0.6
+uniform int numColors = 8; // 8.0
+
+in vec2 texcoord;
+out vec4 outColour;
+
+void main() 
+{ 
+  vec3 c = texture(usceneTex, texcoord).rgb;
+  c = pow(c, vec3(gamma, gamma, gamma));
+  c = c * numColors;
+  c = floor(c);
+  c = c / float(numColors);
+  c = pow(c, vec3(1.0 / gamma));
+
+  outColour = vec4(c, 1.0);
+}

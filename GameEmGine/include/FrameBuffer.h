@@ -70,6 +70,8 @@ public:
 	GLuint getDepthHandle() const;
 	GLuint getColorHandle(unsigned m_index) const;
 
+	Texture2D& getColorTexture(unsigned m_index) const;
+
 	void setPostProcess(std::function<void()>, unsigned layer = 0);
 	std::function<void()> getPostProcess();
 

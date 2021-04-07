@@ -30,7 +30,7 @@ Model::Model(cstring path, cstring tag):
 Model::~Model()
 {
 #if _DEBUG
-	printf("Deleted %s\n", m_type.c_str());
+//	printf("Deleted %s\n", m_type.c_str());
 #endif // _DEBUG
 	if(!m_copy)
 		meshCleanUp();

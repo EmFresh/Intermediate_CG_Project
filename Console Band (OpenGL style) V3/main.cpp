@@ -610,8 +610,48 @@ public:
 
 #pragma region GDW GAME STUFF
 
+//Game Design Doc
+/*
+ PROJECT RHYTHM TOWER
+
+	GamePlay:
+		- enemies are spawned based on bpm
+		- tower shots are based on specific music rhythm beat
+		- there will be a "DOUBLE TIME" section where enemies spawn by half
+		bpm and move twice as fast. the towers will not get a speed boost
+		- if enemies make it through they do damage based on their beat type on every one of their beats
+		- would be cool to add screen shake
+
+	Object Types:
+		Enemies:
+			- normal: enemies show up on quarter beats 1 2 3 4
+			- fast: enemies show up on beats between normal enemies. they are twice as fast but have half health
+			- faster (maybe?): that show up on beats 2 and 3 of a quarter
+			- tank: enemies that show up every 2(maybe 4) full bars twice or 4 times the health of normal enemies
+		Towers:
+			- normal: shoots on every quarter beat
+			- fast: shoots on the eighth beats per bar
+			- Slow: shoots once per 4 beats dose big damage
+	Music:
+		- simple, repeatable music that can be put on loop
+		- should only have one instrument
+		- towers add layers to music
+*/
+
 class GDWGAME: public Scene
 {
+	enum Switches
+	{
+		DefaultScene = 0,
+		Position,
+		Normal,
+		colour,
+		lightAccumulation,
+		post1,
+		post2,
+		post3
+	};
+
 #pragma region Variables
 	Light lit;
 
@@ -621,6 +661,9 @@ class GDWGAME: public Scene
 		rotLeft, rotRight, rotUp, rotDown, tiltLeft, tiltRight,
 		tab = false, lutActive = false, enableBloom = false, pause = false;
 
+	Switches toggle = post1;
+	uint blurPasses = 3;
+
 	Model _map;
 	std::vector<std::shared_ptr<Enemy>> enemies;
 	std::vector<std::shared_ptr<Tower>> towers;
@@ -629,6 +672,14 @@ class GDWGAME: public Scene
 
 	std::vector<Beat>beats;
 
+	Shader
+		* m_bloomHighPass,
+		* m_blurHorizontal,
+		* m_blurVertical,
+		* m_blurrComposite,
+		* m_lutNGrayscaleShader,
+		* m_sobel
+		;
 #pragma endregion
 
 public:
@@ -668,11 +719,240 @@ public:
 
 	}
 
+#include <ctime>
 	void init()
 	{
-		//	FrustumPeramiters frustum{65,(float)Game::getWindowWidth() / Game::getWindowHeight(),0.001f,500};
-		//
-		//	Game::setCameraType(&frustum);
+	#pragma region Init Shaders & Framebuffers 
+
+		m_bloomHighPass = ResourceManager::getShader("Shaders/Main Buffer.vtsh", "Shaders/BloomHighPass.fmsh");
+		m_blurHorizontal = ResourceManager::getShader("Shaders/Main Buffer.vtsh", "Shaders/BlurHorizontal.fmsh");
+		m_blurVertical = ResourceManager::getShader("Shaders/Main Buffer.vtsh", "Shaders/BlurVertical.fmsh");
+		m_blurrComposite = ResourceManager::getShader("Shaders/Main Buffer.vtsh", "Shaders/BloomComposite.fmsh");
+
+		m_lutNGrayscaleShader = ResourceManager::getShader("Shaders/Main Buffer.vtsh", "Shaders/GrayscalePost.fmsh");
+		m_sobel = ResourceManager::getShader("Shaders/Main Buffer.vtsh", "shaders/Sobel.fmsh");
+		static Shader& m_toonPost = *ResourceManager::getShader("Shaders/Main Buffer.vtsh", "shaders/PosterizeToon.fmsh");
+
+		static FrameBuffer* m_greyscaleBuffer = new FrameBuffer(1, "Greyscale");
+		static FrameBuffer* m_buffer1 = new FrameBuffer(1, "Test1");
+		static FrameBuffer* m_buffer2 = new FrameBuffer(1, "Test2");
+		static FrameBuffer* m_outline = new FrameBuffer(1, "Sobel Outline");
+
+
+		m_greyscaleBuffer->initColourTexture(0, Game::getWindowWidth(), Game::getWindowHeight(), GL_RGB8, GL_LINEAR, GL_CLAMP_TO_EDGE);
+		if(!m_greyscaleBuffer->checkFBO())
+		{
+			puts("FBO failed Creation");
+			system("pause");
+			return;
+		}
+
+		m_buffer1->initColourTexture(0, Game::getWindowWidth() / 2, Game::getWindowHeight() / 2, GL_RGB8, GL_LINEAR, GL_CLAMP_TO_EDGE);
+		if(!m_buffer1->checkFBO())
+		{
+			puts("FBO failed Creation");
+			system("pause");
+			return;
+		}
+		m_buffer2->initColourTexture(0, Game::getWindowWidth() / 2, Game::getWindowHeight() / 2, GL_RGB8, GL_LINEAR, GL_CLAMP_TO_EDGE);
+
+		if(!m_buffer2->checkFBO())
+		{
+			puts("FBO failed Creation");
+			system("pause");
+			return;
+		}
+		m_outline->initColourTexture(0, Game::getWindowWidth(), Game::getWindowHeight(), GL_RGB8, GL_NEAREST, GL_CLAMP_TO_EDGE);
+		if(!m_outline->checkFBO())
+		{
+			puts("FBO failed Creation");
+			system("pause");
+			return;
+		}
+	#pragma endregion
+
+
+		//Create post effects
+		customPostEffects =
+			[&](FrameBuffer* gbuff, FrameBuffer* postBuff, float dt)->void
+		{
+			m_greyscaleBuffer->clear();
+			m_buffer1->clear();
+			m_buffer2->clear();
+
+			static float timer = 0;
+			static Shader& filmGrain = *ResourceManager::getShader("Shaders/Main Buffer.vtsh", "shaders/filmgrain.fmsh");
+
+			switch(toggle)
+			{
+			case post1:
+
+			#pragma region Post 1
+				//glViewport(0, 0, Game::getWindowWidth(), Game::getWindowHeight());
+
+				//Film Grain
+				postBuff->enable();
+				filmGrain.enable();
+
+				glActiveTexture(GL_TEXTURE0);
+				glBindTexture(GL_TEXTURE_2D, postBuff->getColorHandle(0));
+
+				filmGrain.sendUniform("colorMap", 0);
+				filmGrain.sendUniform("time", timer += dt);
+
+				FrameBuffer::drawFullScreenQuad();
+
+				filmGrain.disable();
+				postBuff->disable();
+			#pragma endregion
+				break;
+			case post2:
+			#pragma region Bloom
+				glViewport(0, 0, Game::getWindowWidth() / 2, Game::getWindowHeight() / 2);
+
+				//binds the initial high pass to buffer 1
+				m_buffer1->enable();
+				m_bloomHighPass->enable();
+
+				glActiveTexture(GL_TEXTURE0);
+				glBindTexture(GL_TEXTURE_2D, postBuff->getColorHandle(0));
+
+				m_bloomHighPass->sendUniform("uTex", 0);
+				m_bloomHighPass->sendUniform("uThresh", bloomThresh);
+
+				FrameBuffer::drawFullScreenQuad();
+
+				glActiveTexture(GL_TEXTURE0);
+				glBindTexture(GL_TEXTURE_2D, GL_NONE);
+
+				m_bloomHighPass->disable();
+				m_buffer1->disable();
+
+				//Takes the high pass and blurs it
+				//glViewport(0, 0, Game::getWindowWidth() / 2, Game::getWindowHeight() / 2);
+				for(int a = 0; a < blurPasses; a++)
+				{
+					m_buffer2->enable();
+					m_blurHorizontal->enable();
+					m_blurHorizontal->sendUniform("uTex", 0);
+					m_blurHorizontal->sendUniform("uPixleSize", 1.0f / Game::getWindowHeight());
+					glBindTexture(GL_TEXTURE_2D, m_buffer1->getColorHandle(0));
+					FrameBuffer::drawFullScreenQuad();
+
+					glBindTexture(GL_TEXTURE_2D, GL_NONE);
+					m_blurHorizontal->disable();
+
+
+					m_buffer1->enable();
+					m_blurVertical->enable();
+					m_blurVertical->sendUniform("uTex", 0);
+					m_blurVertical->sendUniform("uPixleSize", 1.0f / Game::getWindowWidth());
+					glBindTexture(GL_TEXTURE_2D, m_buffer2->getColorHandle(0));
+					FrameBuffer::drawFullScreenQuad();
+
+					glBindTexture(GL_TEXTURE_2D, GL_NONE);
+					m_blurVertical->disable();
+				}
+
+				FrameBuffer::disable();//return to base frame buffer
+
+				glViewport(0, 0, Game::getWindowWidth(), Game::getWindowHeight());
+
+				m_greyscaleBuffer->enable();
+				m_blurrComposite->enable();
+				glActiveTexture(GL_TEXTURE0);
+				m_blurrComposite->sendUniform("uScene", 0);
+				glBindTexture(GL_TEXTURE_2D, postBuff->getColorHandle(0));
+
+				glActiveTexture(GL_TEXTURE1);
+				m_blurrComposite->sendUniform("uBloom", 1);
+				glBindTexture(GL_TEXTURE_2D, m_buffer1->getColorHandle(0));
+
+				m_blurrComposite->sendUniform("uBloomEnable", enableBloom);
+				FrameBuffer::drawFullScreenQuad();
+
+				glActiveTexture(GL_TEXTURE1);
+				glBindTexture(GL_TEXTURE_2D, GL_NONE);
+				glActiveTexture(GL_TEXTURE0);
+				glBindTexture(GL_TEXTURE_2D, GL_NONE);
+				m_blurrComposite->disable();
+				m_greyscaleBuffer->disable();
+				m_greyscaleBuffer->moveColourToBuffer(postBuff->getDepthWidth(), postBuff->getDepthWidth(), postBuff);
+			#pragma endregion
+				break;
+			case post3:
+			#pragma region Post 3
+
+			#pragma endregion
+				break;
+			}
+
+		#pragma region LUT/Grayscale
+			//glClearDepth(1.f);
+			//glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
+
+
+			//3D look up table being applied and grayscale
+			postBuff->enable();
+			m_lutNGrayscaleShader->enable();
+
+			m_lutNGrayscaleShader->sendUniform("uTex", 0);//previous colour buffer
+			m_lutNGrayscaleShader->sendUniform("customTexure", 6);//LUT
+			m_lutNGrayscaleShader->sendUniform("lutSize", ResourceManager::getTextureLUT(lutPath.c_str()).lutSize);
+			m_lutNGrayscaleShader->sendUniform("lutActive", lutActive);
+
+			glActiveTexture(GL_TEXTURE0);
+			glBindTexture(GL_TEXTURE_2D, postBuff->getColorHandle(0));//previous colour buffer
+			glActiveTexture(GL_TEXTURE6);
+			glBindTexture(GL_TEXTURE_3D, ResourceManager::getTextureLUT(lutPath.c_str()).id);//LUT
+
+			FrameBuffer::drawFullScreenQuad();
+
+			glActiveTexture(GL_TEXTURE0);
+			glBindTexture(GL_TEXTURE_2D, GL_NONE);
+			glActiveTexture(GL_TEXTURE6);
+			glBindTexture(GL_TEXTURE_3D, GL_NONE);
+
+			m_lutNGrayscaleShader->disable();
+			postBuff->disable();
+		#pragma endregion
+
+		#pragma region Toon Shading
+
+			//Shading
+			postBuff->enable();
+			m_toonPost.enable();
+
+			m_toonPost.sendUniform("usceneTex", 0);
+			m_toonPost.sendUniform("gamma", 0.8f);
+			m_toonPost.sendUniform("numColors", 3);
+
+			postBuff->getColorTexture(0).bindTexture(0);
+
+			postBuff->drawFullScreenQuad();
+
+			m_toonPost.disable();
+			postBuff->disable();
+
+			//Outline
+			postBuff->enable();
+			m_sobel->enable();
+			
+			m_sobel->sendUniform("uNormalMap",0);
+			m_sobel->sendUniform("uDepthMap",1);
+			m_sobel->sendUniform("uSceneTex",2);
+			m_sobel->sendUniform("uPixelSize", Vec2{1/(float)postBuff->getColourWidth(0),1/(float)postBuff->getColourHeight(0)});
+			
+			Texture2D::bindTexture(0,gbuff->getColorHandle(2));
+			Texture2D::bindTexture(1,gbuff->getDepthHandle());
+			Texture2D::bindTexture(2,postBuff->getColorHandle(0));
+
+			postBuff->drawFullScreenQuad();
+
+			m_sobel->disable();
+			postBuff->disable();
+		#pragma endregionc
+		};
 
 		_map.create(new PrimitivePlane(Vec3(40.0f, 0.0f, 40.0f)));
 		_map.replaceTexture(0, 0, ResourceManager::getTexture2D("Textures/play rug.jpg").id);
@@ -682,7 +962,7 @@ public:
 		//Audio
 		AudioPlayer::init();
 
-		if(!AudioPlayer::createAudioStream("Music/song 1/UBI_NEXT_2021.wav"))
+		if(!AudioPlayer::createAudioStream("Music/song 1/Main Beet (midevil).wav"))
 			puts("Audio Not Playing");
 		beats = BeatMapReader::loadBeatMap("Music/song 1/beat.bmap");
 		AudioPlayer::play(true);
@@ -702,46 +982,50 @@ public:
 			Game::addModel(point.get());
 			++count;
 		}
-		{
-			float height = 0.1f;
-			points[0]->translate(Vec3((-_map.getWidth() / 2), height, (_map.getDepth() / 2 - (_map.getDepth() / 6)) - 1));
-			points[1]->translate(Vec3((-_map.getWidth() / 2) + 6, height, (_map.getDepth() / 2 - (_map.getDepth() / 6)) - 4));
-			points[2]->translate(Vec3((-_map.getWidth() / 2) + 13, height, (_map.getDepth() / 2 - (_map.getDepth() / 6)) - 4));
-			points[3]->translate(Vec3((-_map.getWidth() / 2) + 16, height, (_map.getDepth() / 2 - (_map.getDepth() / 6))));
-			points[4]->translate(Vec3((-_map.getWidth() / 2) + 23, height, (_map.getDepth() / 2 - (_map.getDepth() / 6) + 2)));
-			points[5]->translate(Vec3((-_map.getWidth() / 2) + 25, height, (_map.getDepth() / 2 - (_map.getDepth() / 6) - 4)));
-			points[6]->translate(Vec3((-_map.getWidth() / 2) + 29, height, (_map.getDepth() / 2 - (_map.getDepth() / 6) - 6)));
-			points[7]->translate(Vec3((-_map.getWidth() / 2) + 32, height, (_map.getDepth() / 2 - (_map.getDepth() / 6) - 9)));
-			points[8]->translate(Vec3((-_map.getWidth() / 2) + 32.5f, height, (_map.getDepth() / 2 - (_map.getDepth() / 6) - 14)));
-			points[9]->translate(Vec3((-_map.getWidth() / 2) + 36, height, (_map.getDepth() / 2 - (_map.getDepth() / 6) - 18)));
-			points[10]->translate(Vec3((-_map.getWidth() / 2) + 39, height, (_map.getDepth() / 2 - (_map.getDepth() / 6) - 22)));
-			points[11]->translate(Vec3((-_map.getWidth() / 2) + 39, height, (_map.getDepth() / 2 - (_map.getDepth() / 6) - 25)));
-			points[12]->translate(Vec3((-_map.getWidth() / 2) + 30, height, (_map.getDepth() / 2 - (_map.getDepth() / 6) - 25)));
-			points[13]->translate(Vec3((-_map.getWidth() / 2) + 27, height, (_map.getDepth() / 2 - (_map.getDepth() / 6) - 26)));
-			points[14]->translate(Vec3((-_map.getWidth() / 2) + 25, height, (_map.getDepth() / 2 - (_map.getDepth() / 6) - 24)));
-			points[15]->translate(Vec3((-_map.getWidth() / 2) + 27, height, (_map.getDepth() / 2 - (_map.getDepth() / 6) - 21)));
-			points[16]->translate(Vec3((-_map.getWidth() / 2) + 29, height, (_map.getDepth() / 2 - (_map.getDepth() / 6) - 23)));
-			points[17]->translate(Vec3((-_map.getWidth() / 2) + 27, height, (_map.getDepth() / 2 - (_map.getDepth() / 6) - 26)));
-			points[18]->translate(Vec3((-_map.getWidth() / 2) + 25, height, (_map.getDepth() / 2 - (_map.getDepth() / 6) - 24)));
-			points[19]->translate(Vec3((-_map.getWidth() / 2) + 25, height, (_map.getDepth() / 2 - (_map.getDepth() / 6) - 21)));
-			points[20]->translate(Vec3((-_map.getWidth() / 2) + 24, height, (_map.getDepth() / 2 - (_map.getDepth() / 6) - 18)));
-			points[21]->translate(Vec3((-_map.getWidth() / 2) + 23, height, (_map.getDepth() / 2 - (_map.getDepth() / 6) - 15)));
-			points[22]->translate(Vec3((-_map.getWidth() / 2) + 22, height, (_map.getDepth() / 2 - (_map.getDepth() / 6) - 12)));
-			points[23]->translate(Vec3((-_map.getWidth() / 2) + 19, height, (_map.getDepth() / 2 - (_map.getDepth() / 6) - 13)));
-			points[24]->translate(Vec3((-_map.getWidth() / 2) + 14, height, (_map.getDepth() / 2 - (_map.getDepth() / 6) - 8)));
-			points[25]->translate(Vec3((-_map.getWidth() / 2) + 10, height, (_map.getDepth() / 2 - (_map.getDepth() / 6) - 13)));
-			points[26]->translate(Vec3((-_map.getWidth() / 2) + 10, height, (_map.getDepth() / 2 - (_map.getDepth() / 6) - 15)));
-			points[27]->translate(Vec3((-_map.getWidth() / 2) + 15, height, (_map.getDepth() / 2 - (_map.getDepth() / 6) - 14)));
-			points[28]->translate(Vec3((-_map.getWidth() / 2) + 15, height, (_map.getDepth() / 2 - (_map.getDepth() / 6) - 18)));
-			points[29]->translate(Vec3((-_map.getWidth() / 2) + 13, height, (_map.getDepth() / 2 - (_map.getDepth() / 6) - 21)));
-			points[30]->translate(Vec3((-_map.getWidth() / 2) + 13, height, (_map.getDepth() / 2 - (_map.getDepth() / 6) - 28)));
-			points[31]->translate(Vec3((-_map.getWidth() / 2) + 14, height, (_map.getDepth() / 2 - (_map.getDepth() / 6) - 31)));
-			points[32]->translate(Vec3((-_map.getWidth() / 2) + 16, height, (_map.getDepth() / 2 - (_map.getDepth() / 6) - 35)));
-		}
+
+	#pragma region This is HELL!!
+
+		float height = 0.1f;
+		points[0]->translate(Vec3((-_map.getWidth() / 2), height, (_map.getDepth() / 2 - (_map.getDepth() / 6)) - 1));
+		points[1]->translate(Vec3((-_map.getWidth() / 2) + 6, height, (_map.getDepth() / 2 - (_map.getDepth() / 6)) - 4));
+		points[2]->translate(Vec3((-_map.getWidth() / 2) + 13, height, (_map.getDepth() / 2 - (_map.getDepth() / 6)) - 4));
+		points[3]->translate(Vec3((-_map.getWidth() / 2) + 16, height, (_map.getDepth() / 2 - (_map.getDepth() / 6))));
+		points[4]->translate(Vec3((-_map.getWidth() / 2) + 23, height, (_map.getDepth() / 2 - (_map.getDepth() / 6) + 2)));
+		points[5]->translate(Vec3((-_map.getWidth() / 2) + 25, height, (_map.getDepth() / 2 - (_map.getDepth() / 6) - 4)));
+		points[6]->translate(Vec3((-_map.getWidth() / 2) + 29, height, (_map.getDepth() / 2 - (_map.getDepth() / 6) - 6)));
+		points[7]->translate(Vec3((-_map.getWidth() / 2) + 32, height, (_map.getDepth() / 2 - (_map.getDepth() / 6) - 9)));
+		points[8]->translate(Vec3((-_map.getWidth() / 2) + 32.5f, height, (_map.getDepth() / 2 - (_map.getDepth() / 6) - 14)));
+		points[9]->translate(Vec3((-_map.getWidth() / 2) + 36, height, (_map.getDepth() / 2 - (_map.getDepth() / 6) - 18)));
+		points[10]->translate(Vec3((-_map.getWidth() / 2) + 39, height, (_map.getDepth() / 2 - (_map.getDepth() / 6) - 22)));
+		points[11]->translate(Vec3((-_map.getWidth() / 2) + 39, height, (_map.getDepth() / 2 - (_map.getDepth() / 6) - 25)));
+		points[12]->translate(Vec3((-_map.getWidth() / 2) + 30, height, (_map.getDepth() / 2 - (_map.getDepth() / 6) - 25)));
+		points[13]->translate(Vec3((-_map.getWidth() / 2) + 27, height, (_map.getDepth() / 2 - (_map.getDepth() / 6) - 26)));
+		points[14]->translate(Vec3((-_map.getWidth() / 2) + 25, height, (_map.getDepth() / 2 - (_map.getDepth() / 6) - 24)));
+		points[15]->translate(Vec3((-_map.getWidth() / 2) + 27, height, (_map.getDepth() / 2 - (_map.getDepth() / 6) - 21)));
+		points[16]->translate(Vec3((-_map.getWidth() / 2) + 29, height, (_map.getDepth() / 2 - (_map.getDepth() / 6) - 23)));
+		points[17]->translate(Vec3((-_map.getWidth() / 2) + 27, height, (_map.getDepth() / 2 - (_map.getDepth() / 6) - 26)));
+		points[18]->translate(Vec3((-_map.getWidth() / 2) + 25, height, (_map.getDepth() / 2 - (_map.getDepth() / 6) - 24)));
+		points[19]->translate(Vec3((-_map.getWidth() / 2) + 25, height, (_map.getDepth() / 2 - (_map.getDepth() / 6) - 21)));
+		points[20]->translate(Vec3((-_map.getWidth() / 2) + 24, height, (_map.getDepth() / 2 - (_map.getDepth() / 6) - 18)));
+		points[21]->translate(Vec3((-_map.getWidth() / 2) + 23, height, (_map.getDepth() / 2 - (_map.getDepth() / 6) - 15)));
+		points[22]->translate(Vec3((-_map.getWidth() / 2) + 22, height, (_map.getDepth() / 2 - (_map.getDepth() / 6) - 12)));
+		points[23]->translate(Vec3((-_map.getWidth() / 2) + 19, height, (_map.getDepth() / 2 - (_map.getDepth() / 6) - 13)));
+		points[24]->translate(Vec3((-_map.getWidth() / 2) + 14, height, (_map.getDepth() / 2 - (_map.getDepth() / 6) - 8)));
+		points[25]->translate(Vec3((-_map.getWidth() / 2) + 10, height, (_map.getDepth() / 2 - (_map.getDepth() / 6) - 13)));
+		points[26]->translate(Vec3((-_map.getWidth() / 2) + 10, height, (_map.getDepth() / 2 - (_map.getDepth() / 6) - 15)));
+		points[27]->translate(Vec3((-_map.getWidth() / 2) + 15, height, (_map.getDepth() / 2 - (_map.getDepth() / 6) - 14)));
+		points[28]->translate(Vec3((-_map.getWidth() / 2) + 15, height, (_map.getDepth() / 2 - (_map.getDepth() / 6) - 18)));
+		points[29]->translate(Vec3((-_map.getWidth() / 2) + 13, height, (_map.getDepth() / 2 - (_map.getDepth() / 6) - 21)));
+		points[30]->translate(Vec3((-_map.getWidth() / 2) + 13, height, (_map.getDepth() / 2 - (_map.getDepth() / 6) - 28)));
+		points[31]->translate(Vec3((-_map.getWidth() / 2) + 14, height, (_map.getDepth() / 2 - (_map.getDepth() / 6) - 31)));
+		points[32]->translate(Vec3((-_map.getWidth() / 2) + 16, height, (_map.getDepth() / 2 - (_map.getDepth() / 6) - 35)));
+
+	#pragma endregion
 
 		//Towers
 		towers.resize(3);
 		count = 0;
+		std::srand(std::time(nullptr));
 		for(auto& tower : towers)
 		{
 			//change to do different towers
@@ -759,7 +1043,7 @@ public:
 				break;
 			}
 
-			tower->create("Models/rocket-ship/rocket ship.obj");
+			tower->create("Models/woodtower/woodtower.obj");
 			tower->setScale(0.2f);
 
 			tower->translateBy(0, 0, -5.f * count++);
@@ -786,10 +1070,6 @@ public:
 		//	Game::addModel(enemyBase.get());
 		//}
 		//enemies[0]->setWayPoints(points);
-
-
-
-
 
 
 		//Lights & Positions
@@ -918,7 +1198,7 @@ public:
 		static double timer = 0;
 		static int beatOn = 0, lastBeatOn = 0;
 
-		timer = AudioPlayer::getTimePosition(0) * .001;
+		timer = AudioPlayer::getTimePosition(0) * .001;//seconds
 		static double bps = 60 / beats[0].bpm * .5;//eighth notes
 
 		if((beatOn = (int)(timer / bps)) != lastBeatOn)
@@ -928,19 +1208,24 @@ public:
 			bool rest = rand() % 2;
 
 
-			if(!(beatOn % 16) && !rest)//two whole bars
+			if(!(beatOn % 16) && !rest)//two whole bars(eight eightnote counts per bar)
 				enemies.push_back(std::shared_ptr<WholeEnemy>(new WholeEnemy()));
 			else if(!(beatOn % 2) && !rest)
 				enemies.push_back(std::shared_ptr<QuarterEnemy>(new QuarterEnemy()));
 			else if(!((beatOn) % 1) && !rest)
 				enemies.push_back(std::shared_ptr<EighthEnemy>(new EighthEnemy()));
 
+			static Model enemy("Models/enemy 1/enemy_nonGDW3.obj");
+
 			if(!rest)
 			{
-				enemies.back()->create("Models/ae-86/ae-86.obj");
-				enemies.back()->setScale(0.6f);
+				enemies.back()->create(enemy);
+				enemies.back()->setScale(1.6f);
+				enemies.back()->setColour(1, 1, 1);
+				//enemies.back()->;
+
 				Vec3 pos = /*map1.getWayPoints()[0]->getPosition()*/ points[0]->getLocalPosition();
-				enemies.back()->translate(pos);
+				enemies.back()->translate(pos + Vec3{-2,0,0});
 				enemies.back()->setActive(true);
 				enemies.back()->setWayPoints(/*map1.getWayPoints()*/points);
 
@@ -948,16 +1233,26 @@ public:
 			}
 		}
 
+		//updates
 		for(auto& enemy : enemies)
 			enemy->update((float)dt);
+
 		for(auto& tower : towers)
 			tower->update((float)dt);
 
+		//enemy clean up
 		for(auto& a : enemies)
 		{
 			if(!a.get())continue;
 			a->update((float)dt);
+
 			if(a->getHealth() <= 0)
+			{
+				Game::removeModel(a.get());
+				enemies.erase(std::find(enemies.begin(), enemies.end(), a));
+			}
+
+			if(!a->isActive())
 			{
 				Game::removeModel(a.get());
 				enemies.erase(std::find(enemies.begin(), enemies.end(), a));
@@ -973,7 +1268,7 @@ public:
 
 int main()
 {
-	Game::init("Da Game", 800, 600);
+	Game::init("Da Game", 1620, 780);
 	GDWGAME test;
 
 	//Song song;//just another scene... move along

@@ -306,6 +306,18 @@ void Shader::sendUniform(cstring uniform, Vec3 val)
 	glUniform3fv(uni, 1, &val.x);
 }
 
+void Shader::sendUniform(cstring uniform, Vec2 val)
+{
+	GLint uni = getUniformLocation(uniform);
+	glUniform2fv(uni, 1, &val.x);
+}
+
+void Shader::sendUniform(cstring uniform, float x, float y)
+{
+	GLint uni = getUniformLocation(uniform);
+	glUniform2f(uni, x, y);
+}
+
 void Shader::sendUniform(cstring uniform, float x, float y, float z)
 {
 	GLint uni = getUniformLocation(uniform);

@@ -39,7 +39,7 @@ float calculateShadow()
             float PCFtDepth = texture(uShadow, projCoord.xy + vec2(x, y) * texelSize).r;
             shadow += (currentDepth - bias >= PCFtDepth ? 0 : 1);
         }
-    shadow *= 0.11111111111111111111111111111111;//shadow / 9(Not sure if this will work)
+    shadow *= 0.11111111111111111111111111111111;//shadow /= 9(Not sure if this will work)
     
     return clamp(shadow + (1 - uOpacity) , 0, 1);
 }

@@ -311,6 +311,10 @@ GLuint FrameBuffer::getColorHandle(unsigned m_index) const
 {
 	return m_colorAttachments[m_index].id;
 }
+Texture2D& FrameBuffer::getColorTexture(unsigned m_index) const
+{
+	return m_colorAttachments[m_index];
+}
 
 void FrameBuffer::setPostProcess(std::function<void()>post, unsigned layer)
 {
