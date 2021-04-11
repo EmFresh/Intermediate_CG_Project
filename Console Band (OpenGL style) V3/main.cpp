@@ -282,7 +282,7 @@ public:
 							rand() % 5 + rand() % 1000 * .001,
 							rand() % 20 + rand() % 1000 * .001);
 
-		
+			LightManager::addLight(&light);
 		}
 
 	#pragma endregion
@@ -482,30 +482,19 @@ public:
 
 		float maxSpeed = 10;
 
-		//if(!pause)
-		//{
-		//
-		//	trans[1].rotateBy({0,maxSpeed * 1.0f * (float)dt,0});
-		//	trans[2].rotateBy({0,maxSpeed * 0.9f * (float)dt,0});
-		//	trans[3].rotateBy({0,maxSpeed * 0.8f * (float)dt,0});
-		//	trans[4].rotateBy({0,maxSpeed * 0.7f * (float)dt,0});
-		//	trans[5].rotateBy({0,maxSpeed * 0.6f * (float)dt,0});
-		//	trans[6].rotateBy({0,maxSpeed * 0.5f * (float)dt,0});
-		//	trans[7].rotateBy({0,maxSpeed * 0.4f * (float)dt,0});
-		//	trans[8].rotateBy({0,maxSpeed * 0.3f * (float)dt,0});
-		//	for(int a = 0; a < 9; ++a)
-		//		models[a].rotateBy(0, (10 - a) * 5 * dt, 0);
-		//}
+		static vector<bool> goDown = vector<bool>(lights.size(), false);
+		uint count = 0;
+		for(auto& light : lights)
+		{
+			light.translateBy(0, maxSpeed * dt * (goDown[count] ? -1 : 1), 0);
 
-		//auto tmpOBJPos = models[0].getLocalPosition();
-		//EmGineAudioPlayer::getAudioControl()[0][0]->listener->pos = *(FMOD_VEC3*)&tmpOBJPos;
-		//
-		//auto tmpPos = Game::getMainCamera()->getLocalPosition();
-		//auto tmpUp = Game::getMainCamera()->getUp();
-		//auto tmpForward = Game::getMainCamera()->getForward();
-		//EmGineAudioPlayer::getAudioSystem()->set3DListenerAttributes(0, (FMOD_VEC3*)&tmpPos, nullptr, (FMOD_VEC3*)&tmpForward, (FMOD_VEC3*)&tmpUp);
-		//
-		//EmGineAudioPlayer::update();
+			if(light.getLocalPosition().y >= 5)
+				goDown[count] = true;
+			if(light.getLocalPosition().y <= 0)
+				goDown[count] = false;
+
+			++count;
+		}
 
 
 	}
