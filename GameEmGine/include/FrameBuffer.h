@@ -56,14 +56,14 @@ public:
 	void setViewport(int x, int y, int width, int height);
 	void setViewport(int x, int y, uint colourIndex);
 
-	void moveColourToBackBuffer(int windowWidth, int windowHeight);
-	void moveColourToBuffer(int windowWidth, int windowHeight, FrameBuffer* fboID);
+	void copyColourToBackBuffer(int windowWidth, int windowHeight);
+	void copyColourToBuffer(int windowWidth, int windowHeight, FrameBuffer* fboID);
 
-	void moveSingleColourToBackBuffer(int windowWidth, int windowHeight, uint from = 0);
-	void moveSingleColourToBuffer(int windowWidth, int windowHeight, FrameBuffer* fboID, uint from=0, uint to=0);
+	void copySingleColourToBackBuffer(int windowWidth, int windowHeight, uint from = 0);
+	void copySingleColourToBuffer(int windowWidth, int windowHeight, FrameBuffer* fboID, uint from=0, uint to=0);
 
-	void moveDepthToBackBuffer(int windowWidth, int windowHeight);
-	void moveDepthToBuffer(int windowWidth, int windowHeight, GLuint fboID);
+	void copyDepthToBackBuffer(int windowWidth, int windowHeight);
+	void copyDepthToBuffer(int windowWidth, int windowHeight, GLuint fboID);
 
 	void takeFromBackBufferColour(int windowWidth, int windowHeight);
 	void takeFromBackBufferDepth(int windowWidth, int windowHeight);

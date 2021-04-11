@@ -144,7 +144,7 @@ void LightManager::shadowRender(unsigned w, unsigned h, FrameBuffer* to, const F
 				//render shadow 
 			glViewport(0, 0, WindowCreator::getScreenWidth(), WindowCreator::getScreenHeight());
 
-			to->moveDepthToBackBuffer(to->getDepthWidth(), to->getDepthHeight());
+			to->copyDepthToBackBuffer(to->getDepthWidth(), to->getDepthHeight());
 			to->enable();
 			glClear(GL_DEPTH_BUFFER_BIT);
 

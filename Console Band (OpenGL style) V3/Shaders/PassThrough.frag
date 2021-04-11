@@ -146,7 +146,7 @@ void directionalLight() {
 
 void main() {
 
-  vec3 colour = texture(uScene, texcoord).rgb;
+  vec3 colour = vec3(0);
 
   // Ambient Light
   float ambientStrength = 1.0;

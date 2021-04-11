@@ -56,6 +56,9 @@ public:
 
 	void init()
 	{
+
+	#pragma region Init Setup
+
 		Game::setBackgroundColour(.15f, .15f, .15f);
 		Game::translateCamera({0,0,-3});
 		FrustumPeramiters frustum{65,(float)Game::getWindowWidth() / Game::getWindowHeight(),0.001f,500};
@@ -65,6 +68,7 @@ public:
 
 		setSkyBox("Skyboxes/space/");
 		enableSkyBox(true);
+	#pragma endregion
 
 	#pragma region Init Shaders & Framebuffers 
 
@@ -120,27 +124,38 @@ public:
 		customPostEffects =
 			[&](FrameBuffer* gbuff, FrameBuffer* postBuff, float dt)->void
 		{
-			m_greyscaleBuffer->clear();
 			m_buffer1->clear();
 			m_buffer2->clear();
 
 			static float timer = 0;
 			Shader* filmGrain = ResourceManager::getShader("Shaders/Main Buffer.vtsh", "shaders/filmgrain.fmsh");
+			Shader* pixel = ResourceManager::getShader("Shaders/Main Buffer.vtsh", "shaders/pixelation.fmsh");
 
 			switch(toggle)
 			{
+			case Switches::DefaultScene:
+				break;
+			case Switches::Position:
+				gbuff->copySingleColourToBuffer(postBuff->getColourWidth(0), postBuff->getColourHeight(0), postBuff, 0);
+				break;
+			case Switches::Normal:
+				gbuff->copySingleColourToBuffer(postBuff->getColourWidth(0), postBuff->getColourHeight(0), postBuff, 2);
+				break;
+			case Switches::colour:
+				gbuff->copySingleColourToBuffer(postBuff->getColourWidth(0), postBuff->getColourHeight(0), postBuff, 4);
+				break;
+			case Switches::lightAccumulation:
+				gbuff->copySingleColourToBuffer(postBuff->getColourWidth(0), postBuff->getColourHeight(0), postBuff, 5);
+				break;
 			case post1:
+			#pragma region Film Grain
 
-			#pragma region Post 1
-			
-				//Film Grain
 				postBuff->enable();
 				filmGrain->enable();
 
 				filmGrain->sendUniform("ucolorMap", 0);
 				filmGrain->sendUniform("utime", timer += dt);
-				 postBuff->getColorTexture(0).bindTexture(0);
-
+				postBuff->getColorTexture(0).bindTexture(0);
 
 				FrameBuffer::drawFullScreenQuad();
 
@@ -156,16 +171,14 @@ public:
 				m_buffer1->enable();
 				m_bloomHighPass->enable();
 
-				glActiveTexture(GL_TEXTURE0);
-				glBindTexture(GL_TEXTURE_2D, postBuff->getColorHandle(0));
+				postBuff->getColorTexture(0).bindTexture(0);
 
 				m_bloomHighPass->sendUniform("uTex", 0);
 				m_bloomHighPass->sendUniform("uThresh", bloomThresh);
 
 				FrameBuffer::drawFullScreenQuad();
 
-				glActiveTexture(GL_TEXTURE0);
-				glBindTexture(GL_TEXTURE_2D, GL_NONE);
+				Texture2D::unbindTexture(0);
 
 				m_bloomHighPass->disable();
 				m_buffer1->disable();
@@ -219,45 +232,25 @@ public:
 				glBindTexture(GL_TEXTURE_2D, GL_NONE);
 				m_blurrComposite->disable();
 				m_greyscaleBuffer->disable();
-				m_greyscaleBuffer->moveColourToBuffer(postBuff->getDepthWidth(), postBuff->getDepthWidth(), postBuff);
+				m_greyscaleBuffer->copyColourToBuffer(postBuff->getDepthWidth(), postBuff->getDepthWidth(), postBuff);
 			#pragma endregion
 				break;
 			case post3:
-			#pragma region Post 3
+			#pragma region Pixelation
 
+				postBuff->enable();
+				pixel->enable();
+
+				pixel->sendUniform("uTex", 0);
+				postBuff->getColorTexture(0).bindTexture(0);
+
+				FrameBuffer::drawFullScreenQuad();
+
+				pixel->disable();
+				postBuff->disable();
 			#pragma endregion
 				break;
 			}
-
-		#pragma region LUT/Grayscale
-			//	//glClearDepth(1.f);
-			//	//glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
-			//
-			//
-			//	//3D look up table being applied and grayscale
-			//	postBuff->enable();
-			//	m_lutNGrayscaleShader->enable();
-			//
-			//	m_lutNGrayscaleShader->sendUniform("uTex", 0);//previous colour buffer
-			//	m_lutNGrayscaleShader->sendUniform("customTexure", 6);//LUT
-			//	m_lutNGrayscaleShader->sendUniform("lutSize", ResourceManager::getTextureLUT(lutPath.c_str()).lutSize);
-			//	m_lutNGrayscaleShader->sendUniform("lutActive", lutActive);
-			//
-			//	glActiveTexture(GL_TEXTURE0);
-			//	glBindTexture(GL_TEXTURE_2D, postBuff->getColorHandle(0));//previous colour buffer
-			//	glActiveTexture(GL_TEXTURE6);
-			//	glBindTexture(GL_TEXTURE_3D, ResourceManager::getTextureLUT(lutPath.c_str()).id);//LUT
-			//
-			//	FrameBuffer::drawFullScreenQuad();
-			//
-			//	glActiveTexture(GL_TEXTURE0);
-			//	glBindTexture(GL_TEXTURE_2D, GL_NONE);
-			//	glActiveTexture(GL_TEXTURE6);
-			//	glBindTexture(GL_TEXTURE_3D, GL_NONE);
-			//
-			//	m_lutNGrayscaleShader->disable();
-			//	postBuff->disable();
-		#pragma endregion
 
 		};
 
@@ -330,76 +323,16 @@ public:
 			[&](int key, int mod)->void
 		{
 
-			switch(key)
-			{
-			case GLFW_KEY_1:
-				lit.enableDiffuse(false);
-				lit.enableSpecular(false);
-				enableBloom = (false);
-				//lutActive = false;
-				break;
-			case GLFW_KEY_2:
-				lit.enableDiffuse(true);
-				lit.enableSpecular(false);
-				enableBloom = (false);
-				//lutActive = false;
-				break;
-			case GLFW_KEY_3:
-				lit.enableDiffuse(false);
-				lit.enableSpecular(true);
-				enableBloom = (false);
-				//lutActive = false;
-				break;
-			case GLFW_KEY_4:
-				lit.enableDiffuse(true);
-				lit.enableSpecular(true);
-				enableBloom = (false);
-				//lutActive = false;
-				break;
-			case GLFW_KEY_5:
-				lit.enableDiffuse(true);
-				lit.enableSpecular(true);
-				enableBloom = (true);
-				//lutActive = false;
-				break;
-
-			case GLFW_KEY_6:
-				for(int a = 0; a < 9; ++a)
-				{
-					models[a].enableTexture(!models[a].isTextureEnabled());
-					if(models[a].isTextureEnabled())
-						models[a].setColour(1, 1, 1);
-					else
-						models[a].setColour(.35f, 0, .45f);
-				}
-				break;
-			case GLFW_KEY_KP_4:
-				bloomThresh -= .1f;
-				if(bloomThresh < 0)bloomThresh = 0;
-				break;
-
-			case GLFW_KEY_KP_6:
-				bloomThresh += .1f;
-				break;
-
-			case GLFW_KEY_COMMA:
-				blurPasses -= 1;
-				if(!blurPasses)blurPasses = 1;
-				break;
-			case GLFW_KEY_PERIOD:
-				blurPasses += 1;
-				break;
-			}
-
-
 			if(key == 'R')
 			{
 				Game::getMainCamera()->reset();
 				Game::translateCamera({0,0,-3});
 			}
 			static bool sky = true, frame = false;
+
 			if(key == 'N')
 				rocket.setWireframe(frame = !frame);
+
 			if(key == GLFW_KEY_SPACE)
 				pause = !pause;
 			//enableSkyBox(sky = !sky);
@@ -410,6 +343,10 @@ public:
 			//static int count;
 			if(key == GLFW_KEY_TAB)
 				tab = !tab;//	std::swap(model[0], model[count++]);
+
+			for(int a = 0; a < 8; ++a)
+				if(key == GLFW_KEY_1 + a)
+					toggle = (Switches)a;
 
 			static bool fps = 0;
 			if(key == 'F')
@@ -493,7 +430,7 @@ public:
 			if(key == GLFW_KEY_DOWN)
 				rotDown = false;
 
-			puts(Game::getMainCamera()->getLocalPosition().toString());
+			//	puts(Game::getMainCamera()->getLocalPosition().toString());
 		};
 
 		//EmGineAudioPlayer::createAudioStream("songs/still alive.mp3");
@@ -885,7 +822,7 @@ public:
 				glBindTexture(GL_TEXTURE_2D, GL_NONE);
 				m_blurrComposite->disable();
 				m_greyscaleBuffer->disable();
-				m_greyscaleBuffer->moveColourToBuffer(postBuff->getDepthWidth(), postBuff->getDepthWidth(), postBuff);
+				m_greyscaleBuffer->copyColourToBuffer(postBuff->getDepthWidth(), postBuff->getDepthWidth(), postBuff);
 			#pragma endregion
 				break;
 			case post3:
@@ -981,7 +918,7 @@ public:
 			shaker->disable();
 			m_screenshake->disable();
 
-			m_screenshake->moveSingleColourToBuffer(postBuff->getColourWidth(0), postBuff->getColourHeight(0), postBuff);
+			m_screenshake->copySingleColourToBuffer(postBuff->getColourWidth(0), postBuff->getColourHeight(0), postBuff);
 		#pragma endregion
 		};
 

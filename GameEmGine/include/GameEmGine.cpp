@@ -111,7 +111,7 @@ void GameEmGine::createNewWindow(std::string name, int width, int height, int x,
 
 	printf("created the window\n");
 
-	m_gBuffer = new FrameBuffer(5, "Main Buffer");
+	m_gBuffer = new FrameBuffer(6, "Main Buffer");
 	m_postBuffer = new FrameBuffer(1, "Post Process Buffer");
 
 
@@ -121,6 +121,7 @@ void GameEmGine::createNewWindow(std::string name, int width, int height, int x,
 	m_gBuffer->initColourTexture(2, getWindowWidth(), getWindowHeight(), GL_RGB16F, GL_NEAREST, GL_CLAMP_TO_EDGE);
 	m_gBuffer->initColourTexture(3, getWindowWidth(), getWindowHeight(), GL_RGB16F, GL_NEAREST, GL_CLAMP_TO_EDGE);
 	m_gBuffer->initColourTexture(4, getWindowWidth(), getWindowHeight(), GL_RGB8, GL_NEAREST, GL_CLAMP_TO_EDGE);
+	m_gBuffer->initColourTexture(5, getWindowWidth(), getWindowHeight(), GL_RGB8, GL_NEAREST, GL_CLAMP_TO_EDGE);
 	if(!m_gBuffer->checkFBO())
 	{
 		puts("FBO failed Creation");
@@ -203,7 +204,7 @@ void GameEmGine::run()
 		glFlush();
 		fpsLimiter();
 	}
-	
+
 	Component::m_exit = true;
 	glfwInit();
 	glfwTerminate();
@@ -455,13 +456,12 @@ void GameEmGine::update()
 
 	glClearDepth(1.f);
 	glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
+
 	glClearColor(0, 0, 0, 1);
 	m_gBuffer->clear();//buffer must be black
 	//glClearColor((float)m_colour.r / 255, (float)m_colour.g / 255, (float)m_colour.b / 255, (float)m_colour.a / 255);//BG colour
 
-
 	glClearColor((float)m_colour.r / 255, (float)m_colour.g / 255, (float)m_colour.b / 255, (float)m_colour.a / 255);//BG colour
-
 	m_postBuffer->clear();
 
 	m_mainCamera->update();
@@ -489,7 +489,7 @@ void GameEmGine::update()
 	m_gBuffer->disable();
 
 	//send depth info before rendering transparent objects
-	m_gBuffer->moveDepthToBuffer(getWindowWidth(), getWindowHeight(), m_postBuffer->getFrameBufferID());
+	m_gBuffer->copyDepthToBuffer(getWindowWidth(), getWindowHeight(), m_postBuffer->getFrameBufferID());
 
 	//sky box
 	m_gBuffer->enable();
@@ -502,51 +502,72 @@ void GameEmGine::update()
 	m_mainCamera->render(m_gBufferShader, m_models, true);
 	m_gBuffer->disable();
 
-	m_gBuffer->moveSingleColourToBuffer(m_postBuffer->getColourWidth(0), m_postBuffer->getColourHeight(0), m_postBuffer, 4);
-	{
-		//store data for later post process
-		m_postBuffer->enable();
-		m_postProcessShader->enable();
+#pragma region Light Accumulation
 
-		//bind textures
-		Texture2D::bindTexture(0, m_gBuffer->getColorHandle(0));
-		Texture2D::bindTexture(1, m_gBuffer->getColorHandle(1));
-		Texture2D::bindTexture(2, m_gBuffer->getColorHandle(2));
-		Texture2D::bindTexture(3, m_gBuffer->getColorHandle(3));
-		Texture2D::bindTexture(4, m_gBuffer->getColorHandle(4));
-		tmpRamp.bindTexture(5);
+	m_postBuffer->enable();
+	m_postProcessShader->enable();
 
-
-		m_postProcessShader->sendUniform("uPosOP", 0);
-		m_postProcessShader->sendUniform("uPosTrans", 1);
-		m_postProcessShader->sendUniform("uNormOP", 2);
-		m_postProcessShader->sendUniform("uNormTrans", 3);
-		m_postProcessShader->sendUniform("uScene", 4);
-		m_postProcessShader->sendUniform("uRamp", 5);
-
-		glDisable(GL_DEPTH_TEST);
-
-		////get the flat shaded scene
-		//m_postProcessShader->sendUniform("LightType", Light::TYPE::NONE);
-		//FrameBuffer::drawFullScreenQuad();
-
-		//Apply lighting
-		LightManager::setShader(m_postProcessShader);
-		LightManager::setFramebuffer(m_postBuffer);
-		LightManager::update();
+	//bind textures
+	Texture2D::bindTexture(0, m_gBuffer->getColorHandle(0));
+	Texture2D::bindTexture(1, m_gBuffer->getColorHandle(1));
+	Texture2D::bindTexture(2, m_gBuffer->getColorHandle(2));
+	Texture2D::bindTexture(3, m_gBuffer->getColorHandle(3));
+	Texture2D::bindTexture(4, m_gBuffer->getColorHandle(4));
+	tmpRamp.bindTexture(5);
 
 
-		glEnable(GL_DEPTH_TEST);
+	m_postProcessShader->sendUniform("uPosOP", 0);
+	m_postProcessShader->sendUniform("uPosTrans", 1);
+	m_postProcessShader->sendUniform("uNormOP", 2);
+	m_postProcessShader->sendUniform("uNormTrans", 3);
+	m_postProcessShader->sendUniform("uScene", 4);
+	m_postProcessShader->sendUniform("uRamp", 5);
 
-		//un-bind textures
-		for(int a = 0; a < 5; ++a)
-			Texture2D::bindTexture(a, GL_NONE);
+	glDisable(GL_DEPTH_TEST);
 
 
-		m_postProcessShader->disable();
-		m_postBuffer->disable();
-	}
+	//Apply lighting
+	LightManager::setShader(m_postProcessShader);
+	LightManager::setFramebuffer(m_postBuffer);
+	LightManager::update();
 
+
+	glEnable(GL_DEPTH_TEST);
+
+	//un-bind textures
+	for(int a = 0; a < 5; ++a)
+		Texture2D::bindTexture(a, GL_NONE);
+
+
+	m_postProcessShader->disable();
+	m_postBuffer->disable();
+
+	m_postBuffer->copySingleColourToBuffer(m_gBuffer->getColourWidth(0), m_gBuffer->getColourHeight(0), m_gBuffer, 0, 5);
+
+#pragma endregion
+
+
+	static Shader* composite = ResourceManager::getShader("Shaders/Main Buffer.vtsh", "Shaders/BloomComposite.fmsh");
+
+	//store data for later post process
+	m_postBuffer->enable();
+	composite->enable();
+
+	composite->sendUniform("uScene", 0);
+	composite->sendUniform("uBloom", 1);
+
+	m_gBuffer->getColorTexture(4).bindTexture(0);
+	m_gBuffer->getColorTexture(5).bindTexture(1);
+
+	FrameBuffer::drawFullScreenQuad();
+
+	Texture2D::bindTexture(0, GL_NONE);
+	Texture2D::bindTexture(1, GL_NONE);
+
+	composite->disable();
+	m_postBuffer->disable();
+
+	m_gBuffer->copyDepthToBuffer();
 	//Apply shadows
 	LightManager::shadowRender(1024, 1024, m_postBuffer, m_gBuffer, m_models);
 
@@ -554,8 +575,8 @@ void GameEmGine::update()
 	if(m_customRender)
 		m_customRender(m_gBuffer, m_postBuffer, (float)glfwGetTime());
 
-	m_postBuffer->moveColourToBackBuffer(getWindowWidth(), getWindowHeight());
-	m_postBuffer->moveDepthToBackBuffer(getWindowWidth(), getWindowHeight());
+	m_postBuffer->copyColourToBackBuffer(getWindowWidth(), getWindowHeight());
+	m_postBuffer->copyDepthToBackBuffer(getWindowWidth(), getWindowHeight());
 
 	if(m_gameLoop != nullptr)
 		m_gameLoop(glfwGetTime());
@@ -588,6 +609,7 @@ void GameEmGine::changeViewport(GLFWwindow*, int w, int h)
 	m_gBuffer->resizeColour(2, w, h);
 	m_gBuffer->resizeColour(3, w, h);
 	m_gBuffer->resizeColour(4, w, h);
+	m_gBuffer->resizeColour(5, w, h);
 
 	m_postBuffer->resizeDepth(w, h);
 	m_postBuffer->resizeColour(0, w, h);
