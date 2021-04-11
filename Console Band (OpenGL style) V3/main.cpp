@@ -9,6 +9,8 @@
 #include "Menu.h"
 #include "BeatMapReader.h"
 
+using std::vector;
+
 static std::string lutPath = "textures/hot.cube";
 
 class Test: public Scene
@@ -36,6 +38,7 @@ class Test: public Scene
 	Transformer trans[10];
 	Model bigBoss[2];
 	Model rocket;
+	vector<Light> lights;
 
 	Text testText;
 	Light lit;
@@ -70,54 +73,6 @@ public:
 		enableSkyBox(true);
 	#pragma endregion
 
-	#pragma region Init Shaders & Framebuffers 
-
-		m_bloomHighPass = ResourceManager::getShader("Shaders/Main Buffer.vtsh", "Shaders/BloomHighPass.fmsh");
-		m_blurHorizontal = ResourceManager::getShader("Shaders/Main Buffer.vtsh", "Shaders/BlurHorizontal.fmsh");
-		m_blurVertical = ResourceManager::getShader("Shaders/Main Buffer.vtsh", "Shaders/BlurVertical.fmsh");
-		m_blurrComposite = ResourceManager::getShader("Shaders/Main Buffer.vtsh", "Shaders/BloomComposite.fmsh");
-
-		m_lutNGrayscaleShader = ResourceManager::getShader("Shaders/Main Buffer.vtsh", "Shaders/GrayscalePost.fmsh");
-		m_sobel = ResourceManager::getShader("Shaders/Main Buffer.vtsh", "shaders/Sobel.fmsh");
-
-
-		m_greyscaleBuffer = new FrameBuffer(1, "Greyscale");
-		m_buffer1 = new FrameBuffer(1, "Test1");
-		m_buffer2 = new FrameBuffer(1, "Test2");
-		m_outline = new FrameBuffer(1, "Sobel Outline");
-
-
-		m_greyscaleBuffer->initColourTexture(0, Game::getWindowWidth(), Game::getWindowHeight(), GL_RGB8, GL_LINEAR, GL_CLAMP_TO_EDGE);
-		if(!m_greyscaleBuffer->checkFBO())
-		{
-			puts("FBO failed Creation");
-			system("pause");
-			return;
-		}
-
-		m_buffer1->initColourTexture(0, Game::getWindowWidth() / blurPasses, Game::getWindowHeight() / blurPasses, GL_RGB8, GL_LINEAR, GL_CLAMP_TO_EDGE);
-		if(!m_buffer1->checkFBO())
-		{
-			puts("FBO failed Creation");
-			system("pause");
-			return;
-		}
-		m_buffer2->initColourTexture(0, Game::getWindowWidth() / blurPasses, Game::getWindowHeight() / blurPasses, GL_RGB8, GL_LINEAR, GL_CLAMP_TO_EDGE);
-
-		if(!m_buffer2->checkFBO())
-		{
-			puts("FBO failed Creation");
-			system("pause");
-			return;
-		}
-		m_outline->initColourTexture(0, Game::getWindowWidth(), Game::getWindowHeight(), GL_RGB8, GL_NEAREST, GL_CLAMP_TO_EDGE);
-		if(!m_outline->checkFBO())
-		{
-			puts("FBO failed Creation");
-			system("pause");
-			return;
-		}
-	#pragma endregion
 
 
 		//Create post effects
@@ -316,6 +271,21 @@ public:
 		//LightManager::addLight(&tester);
 	#pragma endregion
 
+	#pragma region Light Setup
+
+		for(auto& light : lights)
+		{
+			light.setLightType(Light::POINT);
+
+			light.setDiffuse(ColourRGBA(rand() % 256, rand() % 256, rand() % 256));
+			light.translate(rand() % 20 + rand() % 1000 * .001,
+							rand() % 5 + rand() % 1000 * .001,
+							rand() % 20 + rand() % 1000 * .001);
+
+		
+		}
+
+	#pragma endregion
 
 
 		//Key binds

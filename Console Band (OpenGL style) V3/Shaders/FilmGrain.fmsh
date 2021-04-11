@@ -8,7 +8,7 @@ uniform sampler2D ucolorMap;
 
 uniform float utime; 
 
-const float noiseStrength = 20; 
+uniform float noiseStrength = 20; 
  
 
 void main() 

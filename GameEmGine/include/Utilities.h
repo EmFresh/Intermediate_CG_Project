@@ -576,6 +576,7 @@ struct ColourRGBA
 
 	ColourRGBA(GLubyte a_r, GLubyte a_g, GLubyte a_b, GLubyte a_a = (GLubyte)255):r(a_r), g(a_g), b(a_b), a(a_a)
 	{}
+	
 	glm::vec4 toVec4()
 	{
 		return glm::vec4(r * BYTE_TO_FLOAT_MULTI, g * BYTE_TO_FLOAT_MULTI, b * BYTE_TO_FLOAT_MULTI, a * BYTE_TO_FLOAT_MULTI);

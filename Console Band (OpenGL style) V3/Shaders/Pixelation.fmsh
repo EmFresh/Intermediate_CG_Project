@@ -1,7 +1,7 @@
 #version 420
 
 out vec4 FinalColor;
-in vec2 texcoord;
+in vec2 fragmentUV;
 uniform sampler2D uTex;
 
 uniform float Pixelation = 350.0;
@@ -14,7 +14,7 @@ void main()
 	float xx = uxscale * (1.0 / Pixelation);
 	float yy = uyscale * (1.0 / Pixelation);
 	
-	vec2 Coordinate = vec2(xx * floor(texcoord.x / xx), yy * floor(texcoord.y / yy));
+	vec2 Coordinate = vec2(xx * floor(fragmentUV.x / xx), yy * floor(fragmentUV.y / yy));
 
 	FinalColor = texture(uTex, Coordinate);
 }
