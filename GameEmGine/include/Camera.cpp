@@ -268,7 +268,7 @@ glm::mat4 Camera::getWorldTransformation()
 
 
 #include <algorithm>
-void Camera::render(Shader* shader, const std::unordered_map<void*, Model*>& models, bool trans, bool shadow)
+void Camera::render(Shader* shader, const std::unordered_map<void*, Model*>& models, bool trans, bool shadow,bool culln)
 {
 
 	std::vector<std::pair<void*, Model*>> models2(models.begin(), models.end());
@@ -301,7 +301,7 @@ void Camera::render(Shader* shader, const std::unordered_map<void*, Model*>& mod
 			if(shadow)
 				if(!a.second->isCastingShadow())continue;
 			if(shader)
-				if(!cull(a.second))
+				if(!cull(a.second)||!culln)
 					if(trans == a.second->isTransparent())
 						a.second->render(*shader, this);
 		}

@@ -4,6 +4,7 @@
 
 #include <GameEmGine.h>
 #include <memory>
+#include <ctime>
 #include "GameObjects.h"
 #include "Song.h"
 #include "Menu.h"
@@ -32,7 +33,7 @@ class Test: public Scene
 	float speed = 20, angle = 1, bloomThresh = 0.1f;
 	Animation ani;
 
-	Switches toggle = post1;
+	Switches toggle = DefaultScene;
 
 	Model models[10];
 	Transformer trans[10];
@@ -41,17 +42,11 @@ class Test: public Scene
 	vector<Light> lights;
 
 	Text testText;
-	Light lit;
+	//Light lit;
 	bool moveLeft, moveRight, moveForward, moveBack, moveUp, moveDown,
 		rotLeft, rotRight, rotUp, rotDown, tiltLeft, tiltRight,
 		tab = false, lutActive = false, enableBloom = false, pause = false;
-	Shader
-		* m_lutNGrayscaleShader, * m_bloomHighPass,
-		* m_blurHorizontal, * m_blurVertical,
-		* m_blurrComposite, * m_sobel;
-	FrameBuffer
-		* m_buffer1, * m_buffer2,
-		* m_greyscaleBuffer, * m_outline;
+
 #pragma endregion
 
 public:
@@ -79,16 +74,16 @@ public:
 		customPostEffects =
 			[&](FrameBuffer* gbuff, FrameBuffer* postBuff, float dt)->void
 		{
-			m_buffer1->clear();
-			m_buffer2->clear();
 
 			static float timer = 0;
 			Shader* filmGrain = ResourceManager::getShader("Shaders/Main Buffer.vtsh", "shaders/filmgrain.fmsh");
 			Shader* pixel = ResourceManager::getShader("Shaders/Main Buffer.vtsh", "shaders/pixelation.fmsh");
 
+			//postBuff->setViewport(0, 0, 0);//will screw up not showing the fps when not here
 			switch(toggle)
 			{
 			case Switches::DefaultScene:
+
 				break;
 			case Switches::Position:
 				gbuff->copySingleColourToBuffer(postBuff->getColourWidth(0), postBuff->getColourHeight(0), postBuff, 0);
@@ -104,7 +99,6 @@ public:
 				break;
 			case post1:
 			#pragma region Film Grain
-
 				postBuff->enable();
 				filmGrain->enable();
 
@@ -119,80 +113,9 @@ public:
 			#pragma endregion
 				break;
 			case post2:
-			#pragma region Bloom
-				glViewport(0, 0, Game::getWindowWidth() / 2, Game::getWindowHeight() / 2);
-
-				//binds the initial high pass to buffer 1
-				m_buffer1->enable();
-				m_bloomHighPass->enable();
-
-				postBuff->getColorTexture(0).bindTexture(0);
-
-				m_bloomHighPass->sendUniform("uTex", 0);
-				m_bloomHighPass->sendUniform("uThresh", bloomThresh);
-
-				FrameBuffer::drawFullScreenQuad();
-
-				Texture2D::unbindTexture(0);
-
-				m_bloomHighPass->disable();
-				m_buffer1->disable();
-
-				//Takes the high pass and blurs it
-				//glViewport(0, 0, Game::getWindowWidth() / 2, Game::getWindowHeight() / 2);
-				for(int a = 0; a < blurPasses; a++)
-				{
-					m_buffer2->enable();
-					m_blurHorizontal->enable();
-					m_blurHorizontal->sendUniform("uTex", 0);
-					m_blurHorizontal->sendUniform("uPixleSize", 1.0f / Game::getWindowHeight());
-					glBindTexture(GL_TEXTURE_2D, m_buffer1->getColorHandle(0));
-					FrameBuffer::drawFullScreenQuad();
-
-					glBindTexture(GL_TEXTURE_2D, GL_NONE);
-					m_blurHorizontal->disable();
-
-
-					m_buffer1->enable();
-					m_blurVertical->enable();
-					m_blurVertical->sendUniform("uTex", 0);
-					m_blurVertical->sendUniform("uPixleSize", 1.0f / Game::getWindowWidth());
-					glBindTexture(GL_TEXTURE_2D, m_buffer2->getColorHandle(0));
-					FrameBuffer::drawFullScreenQuad();
-
-					glBindTexture(GL_TEXTURE_2D, GL_NONE);
-					m_blurVertical->disable();
-				}
-
-				FrameBuffer::disable();//return to base frame buffer
-
-				glViewport(0, 0, Game::getWindowWidth(), Game::getWindowHeight());
-
-				m_greyscaleBuffer->enable();
-				m_blurrComposite->enable();
-				glActiveTexture(GL_TEXTURE0);
-				m_blurrComposite->sendUniform("uScene", 0);
-				glBindTexture(GL_TEXTURE_2D, postBuff->getColorHandle(0));
-
-				glActiveTexture(GL_TEXTURE1);
-				m_blurrComposite->sendUniform("uBloom", 1);
-				glBindTexture(GL_TEXTURE_2D, m_buffer1->getColorHandle(0));
-
-				m_blurrComposite->sendUniform("uBloomEnable", enableBloom);
-				FrameBuffer::drawFullScreenQuad();
-
-				glActiveTexture(GL_TEXTURE1);
-				glBindTexture(GL_TEXTURE_2D, GL_NONE);
-				glActiveTexture(GL_TEXTURE0);
-				glBindTexture(GL_TEXTURE_2D, GL_NONE);
-				m_blurrComposite->disable();
-				m_greyscaleBuffer->disable();
-				m_greyscaleBuffer->copyColourToBuffer(postBuff->getDepthWidth(), postBuff->getDepthWidth(), postBuff);
-			#pragma endregion
 				break;
 			case post3:
 			#pragma region Pixelation
-
 				postBuff->enable();
 				pixel->enable();
 
@@ -260,10 +183,10 @@ public:
 		//models[2].setTransparent(true);
 		Game::addModel(&models[2]);
 
-		lit.setLightType(Light::TYPE::DIRECTIONAL);
-		//lit.setParent(Game::getMainCamera());
-		lit.setDiffuse({155,0,0});
-		LightManager::addLight(&lit);
+		//lit.setLightType(Light::TYPE::DIRECTIONAL);
+		////lit.setParent(Game::getMainCamera());
+		//lit.setDiffuse({155,0,0});
+		//LightManager::addLight(&lit);
 
 		//static Light tester;
 		//tester.setLightType(Light::TYPE::DIRECTIONAL);
@@ -272,17 +195,26 @@ public:
 	#pragma endregion
 
 	#pragma region Light Setup
+		Model tmp(new PrimitiveSphere(1, 1, 20, 20), "Volume");
+		tmp.setWireframe(true);
 
+		lights.resize(4);
+		srand(time(nullptr));
 		for(auto& light : lights)
 		{
 			light.setLightType(Light::POINT);
 
 			light.setDiffuse(ColourRGBA(rand() % 256, rand() % 256, rand() % 256));
-			light.translate(rand() % 20 + rand() % 1000 * .001,
-							rand() % 5 + rand() % 1000 * .001,
-							rand() % 20 + rand() % 1000 * .001);
+			light.translate((rand() % 200) + (rand() % 1000 * .001) - 100,
+							(rand() % 5) + (rand() % 1000 * .001),
+							(rand() % 200) + (rand() % 1000 * .001) - 100);
+
+			light.addChild(new Model(tmp));
+			reinterpret_cast<Model*>(light.getChild(0))->setColour(light.diffuse);
+			reinterpret_cast<Model*>(light.getChild(0))->setCastShadow(false);
 
 			LightManager::addLight(&light);
+			Game::addModel((Model*)light.getChild(0));
 		}
 
 	#pragma endregion
@@ -400,7 +332,7 @@ public:
 			if(key == GLFW_KEY_DOWN)
 				rotDown = false;
 
-			//	puts(Game::getMainCamera()->getLocalPosition().toString());
+			puts(Game::getMainCamera()->getLocalPosition().toString());
 		};
 
 		//EmGineAudioPlayer::createAudioStream("songs/still alive.mp3");
@@ -444,31 +376,31 @@ public:
 	{
 		// Movement
 		if(moveLeft)
-			lit.translateBy({-speed * dt,0.f,0.f});
+			lights[0].translateBy({-speed * dt,0.f,0.f});
 		if(moveRight)
-			lit.translateBy({speed * dt,0,0});
+			lights[0].translateBy({speed * dt,0,0});
 		if(moveForward)
-			lit.translateBy({0,0,speed * dt});
+			lights[0].translateBy({0,0,speed * dt});
 		if(moveBack)
-			lit.translateBy({0,0,-speed * dt});
+			lights[0].translateBy({0,0,-speed * dt});
 		if(moveUp)
-			lit.translateBy({0,speed * dt,0});
+			lights[0].translateBy({0,speed * dt,0});
 		if(moveDown)
-			lit.translateBy({0,-speed * dt,0});
+			lights[0].translateBy({0,-speed * dt,0});
 
 		// Rotation
 		if(rotLeft)
-			lit.rotateBy({0,-angle,0});
+			lights[0].rotateBy({0,-angle,0});
 		if(rotRight)
-			lit.rotateBy({0,angle,0});
+			lights[0].rotateBy({0,angle,0});
 		if(tiltLeft)
-			lit.rotateBy({0,0,-angle});
+			lights[0].rotateBy({0,0,-angle});
 		if(tiltRight)
-			lit.rotateBy({0,0,angle});
+			lights[0].rotateBy({0,0,angle});
 		if(rotDown)
-			lit.rotateBy({-angle,0,0});
+			lights[0].rotateBy({-angle,0,0});
 		if(rotUp)
-			lit.rotateBy({angle,0,0});
+			lights[0].rotateBy({angle,0,0});
 
 
 	}
@@ -613,7 +545,7 @@ public:
 
 	}
 
-#include <ctime>
+
 	void init()
 	{
 	#pragma region Init Shaders & Framebuffers 

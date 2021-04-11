@@ -146,11 +146,13 @@ void directionalLight() {
 
 void main() {
 
-  vec3 colour = vec3(0);
-
+  vec4 colour = texture(uScene, texcoord);
+  
   // Ambient Light
-  float ambientStrength = 1.0;
-  outColor = vec4(colour * LightAmbient * ambientStrength * int(AmbiantEnable), 1);
+  float ambientStrength = 0.69;
+
+  outColor = colour;
+  outColor *= vec4( LightAmbient * ambientStrength * int(AmbiantEnable), 1);
  
     switch (LightType) {
     case NONE:
@@ -171,5 +173,5 @@ void main() {
 
 
   //outColor = texture(uScene,texcoord);
-  //outColor.rgb = abs(texture(uNormOP,texcoord).rgb);
+  //outColor.rgb = texture(uNormOP,texcoord).rgb;
 }

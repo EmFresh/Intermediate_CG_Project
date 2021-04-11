@@ -216,7 +216,7 @@ void LightManager::update()
 		glm::vec4 dir(0, 0, 1, 1.0f);
 
 
-		pos = m_lights[a]->getWorldTranslationMatrix() * (m_lights[a]->getLocalTranslationMatrix() * glm::vec4(m_lights[a]->getLocalPosition().toVec3(), 1));
+		pos = m_lights[a]->getWorldTranslationMatrix() * (m_lights[a]->getLocalTranslationMatrix() *pos);
 		//	pos = m_cam->getProjectionMatrix() * pos;
 		//	pos.z *= -1;
 			//if(pos.w)
@@ -228,12 +228,12 @@ void LightManager::update()
 			//pos = glm::normalize(pos);
 		m_shader->sendUniform("LightPosition", pos);
 
-
 		dir = (m_lights[a]->getWorldRotationMatrix()) * ((m_lights[a]->getLocalRotationMatrix()) * dir);
 		dir = normalize(dir);
 
 		pos = {0, 0, 0, 1.0f};
 		pos = inverse(m_cam->getViewMatrix()) * pos;
+
 		m_shader->sendUniform("uViewPos", pos);
 
 		m_shader->sendUniform("LightType", (int)m_lights[a]->type);
@@ -257,6 +257,7 @@ void LightManager::update()
 		m_shader->sendUniform("Attenuation_Quadratic", m_lights[a]->attenuationQuadratic);
 
 		m_shader->sendUniform("toonActiveSpec", m_lights[a]->rampActiveDiff);
+
 		m_shader->sendUniform("toonActiveDiff", m_lights[a]->rampActiveSpec);
 
 

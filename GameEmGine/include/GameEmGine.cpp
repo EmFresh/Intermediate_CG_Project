@@ -152,9 +152,7 @@ void GameEmGine::run()
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LEQUAL);
 
-
 	glEnable(GL_CULL_FACE);
-
 	glEnable(GL_TEXTURE_2D);
 
 	glEnable(GL_BLEND);
@@ -163,8 +161,7 @@ void GameEmGine::run()
 
 	while(!glfwWindowShouldClose(m_window->getWindow()) && !exitGame)//update loop
 	{
-		glClearColor((float)m_colour.r / 255, (float)m_colour.g / 255, (float)m_colour.b / 255, (float)m_colour.a / 255);//BG colour
-		//glClearColor(0.f, 0.f, 0.f, 0.f);
+		FrameBuffer::setClearColour(m_colour);//BG colour
 		glCullFace(GL_BACK);
 
 		InputManager::update();
@@ -176,7 +173,7 @@ void GameEmGine::run()
 			char str[20];
 			sprintf_s(str, "fps: %.2f", m_fps);
 
-			glClear(GL_DEPTH_BUFFER_BIT);
+			//glClear(GL_DEPTH_BUFFER_BIT);
 
 			static Text fps;
 			static OrthoPeramiters ortho{0,(float)getWindowWidth(),(float)getWindowHeight(),0,0,500};
@@ -193,8 +190,8 @@ void GameEmGine::run()
 			static std::unordered_map<void*, Model*> tmp;
 			tmp[&fps] = (Model*)&fps;
 
-			glClearDepth(1.f);
 			glClear(GL_DEPTH_BUFFER_BIT);
+			m_postBuffer->setViewport(0, 0, 0);
 			cam.render(nullptr, tmp, true);
 
 			//glfwSetWindowTitle(m_window->getWindow(), (m_window->getTitle() + "--> " + str).c_str());
@@ -355,8 +352,13 @@ Camera* GameEmGine::getMainCamera()
 	return m_mainCamera;
 }
 
+using glm::vec4;
+using glm::vec3;
+using glm::vec2;
 bool GameEmGine::mouseCollision(Model* model)
 {
+	model;
+
 	static PrimitiveCube smallCube({.01f});
 	static Model mouse(&smallCube, "Mouse");
 
@@ -365,21 +367,16 @@ bool GameEmGine::mouseCollision(Model* model)
 
 	Camera* cam = getMainCamera();
 	//	glm::mat4 tmp = glm::inverse(cam->getProjectionMatrix());
-	Vec3 mPos = {InputManager::getMousePosition(),0};
-	glm::vec4 direction((mPos * 2 / (Vec3{(float)getWindowSize().x, (float)getWindowSize().y, 500} - 1)).toVec3(), 1);
-	direction = {direction.x,-direction.y,1,1};
+	Vec2 mPos = InputManager::getMousePosition();
+
+	vec4 rayClip = vec4(mPos.toVec2(), -1, 1);
+	vec4 rayEye = glm::inverse(cam->getProjectionMatrix()) * rayClip;
+	rayEye = vec4(vec2(rayEye), -1, 1);
+	vec3 rayWor = glm::normalize(vec3(glm::inverse(cam->getViewMatrix()) * rayEye));
 
 
-	direction = glm::inverse(cam->getViewMatrix() * cam->getProjectionMatrix()) * direction;
-	direction = glm::normalize(direction);
-
-	//position = position * 2 - 1;
-	//position /= position.w;
-
-	//position.z = cam->getPosition().z;
-	mouse.translate(cam->getLocalPosition());
-
-	return mouse.collision2D(model, reclass(Vec3, direction));
+	return false;
+	//return mouse.collision2D(model, reclass(Vec3, direction));
 }
 
 void GameEmGine::setCameraType(Camera::CAM_TYPE type)
@@ -457,11 +454,10 @@ void GameEmGine::update()
 	glClearDepth(1.f);
 	glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 
-	glClearColor(0, 0, 0, 1);
+	m_gBuffer->setClearColour(0, 0, 0, 1);
 	m_gBuffer->clear();//buffer must be black
-	//glClearColor((float)m_colour.r / 255, (float)m_colour.g / 255, (float)m_colour.b / 255, (float)m_colour.a / 255);//BG colour
 
-	glClearColor((float)m_colour.r / 255, (float)m_colour.g / 255, (float)m_colour.b / 255, (float)m_colour.a / 255);//BG colour
+	m_postBuffer->setClearColour(m_colour);
 	m_postBuffer->clear();
 
 	m_mainCamera->update();
@@ -485,7 +481,7 @@ void GameEmGine::update()
 
 	//Opaque renders 
 	m_gBuffer->enable();
-	m_mainCamera->render(m_gBufferShader, m_models, false);
+	m_mainCamera->render(m_gBufferShader, m_models, false,false,false);
 	m_gBuffer->disable();
 
 	//send depth info before rendering transparent objects
@@ -512,7 +508,7 @@ void GameEmGine::update()
 	Texture2D::bindTexture(1, m_gBuffer->getColorHandle(1));
 	Texture2D::bindTexture(2, m_gBuffer->getColorHandle(2));
 	Texture2D::bindTexture(3, m_gBuffer->getColorHandle(3));
-	Texture2D::bindTexture(4, m_gBuffer->getColorHandle(4));
+	Texture2D::bindTexture(4, m_postBuffer->getColorHandle(0));
 	tmpRamp.bindTexture(5);
 
 
@@ -527,8 +523,8 @@ void GameEmGine::update()
 
 
 	//Apply lighting
+	//LightManager::setFramebuffer(m_postBuffer);
 	LightManager::setShader(m_postProcessShader);
-	LightManager::setFramebuffer(m_postBuffer);
 	LightManager::update();
 
 
@@ -556,8 +552,8 @@ void GameEmGine::update()
 	composite->sendUniform("uScene", 0);
 	composite->sendUniform("uBloom", 1);
 
-	m_gBuffer->getColorTexture(4).bindTexture(0);
-	m_gBuffer->getColorTexture(5).bindTexture(1);
+	m_gBuffer->getColorTexture(4).bindTexture(1);
+	m_gBuffer->getColorTexture(5).bindTexture(0);
 
 	FrameBuffer::drawFullScreenQuad();
 
@@ -567,7 +563,10 @@ void GameEmGine::update()
 	composite->disable();
 	m_postBuffer->disable();
 
-	m_gBuffer->copyDepthToBuffer();
+
+	////test
+	//m_gBuffer->copySingleColourToBuffer(m_postBuffer->getColourWidth(0), m_postBuffer->getColourHeight(0),m_postBuffer, 4);
+
 	//Apply shadows
 	LightManager::shadowRender(1024, 1024, m_postBuffer, m_gBuffer, m_models);
 

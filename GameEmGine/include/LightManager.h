@@ -19,6 +19,10 @@ struct Light:public Transformer
 	};
 
 	Light():Transformer("LIGHT") {}
+	Light(const Light& lit):Transformer(*(Light*)&lit, "LIGHT")
+	{
+		*this = lit;
+	}
 	Light(Light& lit):Transformer(lit, "LIGHT")
 	{
 		*this = lit;
