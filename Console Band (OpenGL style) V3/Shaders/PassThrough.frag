@@ -19,6 +19,7 @@ uniform float LightSpecularExponent;
 uniform float Attenuation_Constant;
 uniform float Attenuation_Linear;
 uniform float Attenuation_Quadratic;
+uniform float volumeLight;
 
 // other
 uniform bool LightEnable = false;
@@ -107,17 +108,20 @@ vec3 calculatePointLight() {
   vec3 lightDirTrans  = normalize(LightPosition.xyz - posTrans);
   vec3 viewDirOP      = uViewPos.xyz - posOP;   
   vec3 viewDirTrans   = uViewPos.xyz - posTrans;   
+
   
   //Atenuation calculation
   float distOP           = length(LightPosition.xyz -    posOP);
   float distTrans        = length(LightPosition.xyz - posTrans);
   float attenuationOP    = ( 1.0 / (Attenuation_Constant + Attenuation_Linear *    distOP + Attenuation_Quadratic * (distOP    *    distOP)));
   float attenuationTrans = ( 1.0 / (Attenuation_Constant + Attenuation_Linear * distTrans + Attenuation_Quadratic * (distTrans * distTrans)));
+  float distVol          = distance(posOP, LightPosition.xyz);
+
   
   //return 
   return
-  blinnPhong(lightDirOP   ,    viewDirOP,    posOP,    normOP) * attenuationOP   +  
-  blinnPhong(lightDirTrans, viewDirTrans, posTrans, normTrans) * attenuationTrans;
+  (blinnPhong(lightDirOP   ,    viewDirOP,    posOP,    normOP) * attenuationOP   +  
+  blinnPhong(lightDirTrans, viewDirTrans, posTrans, normTrans) * attenuationTrans) * float(distVol < volumeLight);
 
 }
 

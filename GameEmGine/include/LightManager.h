@@ -63,7 +63,8 @@ struct Light:public Transformer
 		specularExponent = 25,
 		attenuationConst = 1.f,
 		attenuationLinear = 0.1f,
-		attenuationQuadratic = .01f;
+		attenuationQuadratic = .01f,
+		volumeLight = 100.f;
 
 	bool lightEnable = true;
 	bool shadowEnable = true;

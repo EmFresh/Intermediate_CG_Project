@@ -111,6 +111,7 @@ static inline int vectorWrap(int num, int mod)
 
 #include <cmath>
 #include <memory>
+#include <algorithm>
 template<class T>
 class ObjectPool
 {

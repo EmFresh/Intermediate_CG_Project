@@ -212,6 +212,7 @@ public:
 			light.addChild(new Model(tmp));
 			reinterpret_cast<Model*>(light.getChild(0))->setColour(light.diffuse);
 			reinterpret_cast<Model*>(light.getChild(0))->setCastShadow(false);
+			reinterpret_cast<Model*>(light.getChild(0))->setScale(light.volumeLight);
 
 			LightManager::addLight(&light);
 			Game::addModel((Model*)light.getChild(0));

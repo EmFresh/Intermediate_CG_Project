@@ -260,6 +260,8 @@ void LightManager::update()
 
 		m_shader->sendUniform("toonActiveDiff", m_lights[a]->rampActiveSpec);
 
+		m_shader->sendUniform("volumeLight", m_lights[a]->volumeLight);
+
 
 		FrameBuffer::drawFullScreenQuad();
 	}
