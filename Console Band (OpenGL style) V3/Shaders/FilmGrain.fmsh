@@ -1,26 +1,23 @@
 #version 420
 
-in vec2 texcoord; // Texture coordinates from the vertex shader
+in vec2 texcoord; 
 
-layout(location = 0) out vec3 out_color;
+layout(location = 0) out vec4 finalColor;
 
-uniform sampler2D colorMap; // Original Image
+uniform sampler2D ucolorMap; 
 
-uniform float time; // This would be the time since the start of each frame.
+uniform float utime; 
 
-const float noiseStrength = 12345.6789; // The strength of the noise effect, ajust this accordingly.
-
-float noise(vec2 seed)
-{
-    float x = (seed.x / 3.14159 + 4) * (seed.y / 5.49382 + 4) * ((fract(time) + 1));
-    return mod((mod(x, 13) + 1) * (mod(x, 123) + 1), 0.01) - 0.005;
-} 
+const float noiseStrength = 20; 
+ 
 
 void main() 
 {
-    vec4 color = texture( colorMap, texcoord );
-    vec2 uvRandom = texcoord;
-    uvRandom.y *= noise(vec2(uvRandom.y,time));
-    color.rgb += vec3(noise(uvRandom)*0.15).xxx;
-    out_color =  color.rgb ;
+    vec4 color = texture( ucolorMap, texcoord );
+    float x = (texcoord.x + 4) * (texcoord.y + 4) * (sin(utime) * 10);
+    vec4 grain =
+    noiseStrength * vec4(mod((mod(x, 13) + 1) * (mod(x, 123) + 1), 0.01) - 0.005);
+
+    color += grain; 
+    finalColor= color;
 }

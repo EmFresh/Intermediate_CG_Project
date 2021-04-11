@@ -3,9 +3,9 @@
 // enums
 const int NONE = 0;
 const int DEFAULT = NONE + 1;
-const int POINT = NONE + 2;
-const int DIRECTIONAL = NONE + 3;
-const int SPOTLIGHT = NONE + 4;
+const int POINT = DEFAULT + 1;
+const int DIRECTIONAL = POINT + 1;
+const int SPOTLIGHT = DIRECTIONAL + 1;
 
 uniform vec4 LightPosition;
 
@@ -146,7 +146,7 @@ void directionalLight() {
 
 void main() {
 
-  vec3 colour = texture(uScene, texcoord).rgb;
+  vec3 colour = vec3(0);
 
   // Ambient Light
   float ambientStrength = 1.0;

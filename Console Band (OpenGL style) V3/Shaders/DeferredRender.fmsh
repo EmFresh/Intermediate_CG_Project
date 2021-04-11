@@ -35,12 +35,7 @@ void main()
         outColour          = textureColour;
         outColour         *= colourMod;
     }
-         
-    
-    
-    
+
     outColour.rgb *= darken ? outColour.rgb * 1.2 : vec3(1, 1, 1);
-    outColour.a = isTrans ? outColour.a : 1 ;     
-   
-    
+    outColour.a = isTrans ? outColour.a : 1 ;   
 }

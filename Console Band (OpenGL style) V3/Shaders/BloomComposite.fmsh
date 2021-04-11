@@ -2,7 +2,7 @@
 
 uniform sampler2D uScene;
 uniform sampler2D uBloom; 
-uniform bool uBloomEnable;
+uniform bool uBloomEnable = true;
 
 in vec2 texcoord;
 

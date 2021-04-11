@@ -191,9 +191,9 @@ void FrameBuffer::clear(GLbitfield clearBit)
 		temp |= GL_COLOR_BUFFER_BIT;
 	}
 
-	glBindFramebuffer(GL_FRAMEBUFFER, m_fboID);
+	enable();
 	glClear(clearBit ? clearBit : temp);
-	glBindFramebuffer(GL_FRAMEBUFFER, GL_NONE);
+	disable();
 }
 
 
@@ -214,17 +214,22 @@ void FrameBuffer::disable()
 	glBindFramebuffer(GL_FRAMEBUFFER, GL_NONE);
 }
 
-void FrameBuffer::setViewport(int x, int y, int width, int height) const
+void FrameBuffer::setViewport(int x, int y, int width, int height)
 {
 	glViewport(x, y, width, height);
 }
 
-void FrameBuffer::moveColourToBackBuffer(int windowWidth, int windowHeight)
+void FrameBuffer::setViewport(int x, int y, uint index)
 {
-	moveColourToBuffer(windowWidth, windowHeight, GL_NONE);
+	glViewport(x, y, getColourWidth(index), getColourHeight(index));
 }
 
-void FrameBuffer::moveColourToBuffer(int windowWidth, int windowHeight, FrameBuffer* fbo)
+void FrameBuffer::copyColourToBackBuffer(int windowWidth, int windowHeight)
+{
+	copyColourToBuffer(windowWidth, windowHeight, GL_NONE);
+}
+
+void FrameBuffer::copyColourToBuffer(int windowWidth, int windowHeight, FrameBuffer* fbo)
 {
 	if(!m_numColorAttachments)
 	{
@@ -240,12 +245,12 @@ void FrameBuffer::moveColourToBuffer(int windowWidth, int windowHeight, FrameBuf
 	glBindFramebuffer(GL_FRAMEBUFFER, GL_NONE);
 }
 
-void FrameBuffer::moveSingleColourToBackBuffer(int w, int h, uint from)
+void FrameBuffer::copySingleColourToBackBuffer(int w, int h, uint from)
 {
-	moveSingleColourToBuffer(w, h, nullptr, from, 0);
+	copySingleColourToBuffer(w, h, nullptr, from, 0);
 }
 
-void FrameBuffer::moveSingleColourToBuffer(int w, int h, FrameBuffer* fbo, uint from, uint to)
+void FrameBuffer::copySingleColourToBuffer(int w, int h, FrameBuffer* fbo, uint from, uint to)
 {
 	if(!m_numColorAttachments)
 	{
@@ -267,12 +272,12 @@ void FrameBuffer::moveSingleColourToBuffer(int w, int h, FrameBuffer* fbo, uint 
 	glBindFramebuffer(GL_FRAMEBUFFER, GL_NONE);
 }
 
-void FrameBuffer::moveDepthToBackBuffer(int windowWidth, int windowHeight)
+void FrameBuffer::copyDepthToBackBuffer(int windowWidth, int windowHeight)
 {
-	moveDepthToBuffer(windowWidth, windowHeight, GL_NONE);
+	copyDepthToBuffer(windowWidth, windowHeight, GL_NONE);
 }
 
-void FrameBuffer::moveDepthToBuffer(int windowWidth, int windowHeight, GLuint fboID)
+void FrameBuffer::copyDepthToBuffer(int windowWidth, int windowHeight, GLuint fboID)
 {
 	glBindFramebuffer(GL_READ_FRAMEBUFFER, m_fboID);
 	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fboID);

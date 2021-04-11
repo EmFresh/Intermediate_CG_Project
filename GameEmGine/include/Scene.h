@@ -34,8 +34,11 @@ public:
 	/// <summary>
 	/// the post buffer will be blitted at the end of the function call to the main buffer
 	/// </summary>
-	/// <param name="gbuff:">contains the data for position, trans position, normal, trans normal, and scene colour (in that order)</param>
-	/// <param name="postBuff:">this is the buffer that will be blitted to the screen in the end</param>
+	/// <param name="gbuff:">contains the data for 
+	/// position, trans position, normal, trans normal, 
+	/// scene colour, and Light Accumulation (in that order)</param>
+	/// <param name="postBuff:">this is the buffer that contains the base scene 
+	/// and will be blitted to the screen in the end</param>
 	std::function<void(FrameBuffer* gbuff, FrameBuffer* postBuff, float dt)>  customPostEffects;
 
 	void setParent(const Scene* parent) { if(parent != this)m_parent = (Scene*)parent; };
