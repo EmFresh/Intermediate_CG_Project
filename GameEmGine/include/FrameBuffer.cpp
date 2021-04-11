@@ -214,9 +214,14 @@ void FrameBuffer::disable()
 	glBindFramebuffer(GL_FRAMEBUFFER, GL_NONE);
 }
 
-void FrameBuffer::setViewport(int x, int y, int width, int height) const
+void FrameBuffer::setViewport(int x, int y, int width, int height)
 {
 	glViewport(x, y, width, height);
+}
+
+void FrameBuffer::setViewport(int x, int y, uint index)
+{
+	glViewport(x, y, getColourWidth(index), getColourHeight(index));
 }
 
 void FrameBuffer::moveColourToBackBuffer(int windowWidth, int windowHeight)

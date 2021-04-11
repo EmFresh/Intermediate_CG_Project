@@ -132,17 +132,15 @@ public:
 			case post1:
 
 			#pragma region Post 1
-				//glViewport(0, 0, Game::getWindowWidth(), Game::getWindowHeight());
-
+			
 				//Film Grain
 				postBuff->enable();
 				filmGrain->enable();
 
-				glActiveTexture(GL_TEXTURE0);
-				glBindTexture(GL_TEXTURE_2D, postBuff->getColorHandle(0));
+				filmGrain->sendUniform("ucolorMap", 0);
+				filmGrain->sendUniform("utime", timer += dt);
+				 postBuff->getColorTexture(0).bindTexture(0);
 
-				filmGrain->sendUniform("colorMap", 0);
-				filmGrain->sendUniform("time", timer += dt);
 
 				FrameBuffer::drawFullScreenQuad();
 
@@ -737,6 +735,7 @@ public:
 		static FrameBuffer* m_buffer1 = new FrameBuffer(1, "Test1");
 		static FrameBuffer* m_buffer2 = new FrameBuffer(1, "Test2");
 		static FrameBuffer* m_outline = new FrameBuffer(1, "Sobel Outline");
+		static FrameBuffer* m_screenshake = new FrameBuffer(1, "Screen Shake");
 
 
 		m_greyscaleBuffer->initColourTexture(0, Game::getWindowWidth(), Game::getWindowHeight(), GL_RGB8, GL_LINEAR, GL_CLAMP_TO_EDGE);
@@ -769,6 +768,15 @@ public:
 			system("pause");
 			return;
 		}
+		m_screenshake->initColourTexture(0, Game::getWindowWidth(), Game::getWindowHeight(), GL_RGB8, GL_NEAREST, GL_CLAMP_TO_EDGE);
+		if(!m_screenshake->checkFBO())
+		{
+			puts("FBO failed Creation");
+			system("pause");
+			return;
+		}
+
+
 	#pragma endregion
 
 
@@ -779,30 +787,30 @@ public:
 			m_greyscaleBuffer->clear();
 			m_buffer1->clear();
 			m_buffer2->clear();
+			m_screenshake->clear();
 
 			static float timer = 0;
-			static Shader& filmGrain = *ResourceManager::getShader("Shaders/Main Buffer.vtsh", "shaders/filmgrain.fmsh");
+			static Shader* filmGrain = ResourceManager::getShader("Shaders/Main Buffer.vtsh", "shaders/filmgrain.fmsh");
 
 			switch(toggle)
 			{
 			case post1:
-
 			#pragma region Post 1
 				//glViewport(0, 0, Game::getWindowWidth(), Game::getWindowHeight());
 
 				//Film Grain
 				postBuff->enable();
-				filmGrain.enable();
+				filmGrain->enable();
 
 				glActiveTexture(GL_TEXTURE0);
 				glBindTexture(GL_TEXTURE_2D, postBuff->getColorHandle(0));
 
-				filmGrain.sendUniform("colorMap", 0);
-				filmGrain.sendUniform("time", timer += dt);
+				filmGrain->sendUniform("colorMap", 0);
+				filmGrain->sendUniform("time", timer += dt);
 
 				FrameBuffer::drawFullScreenQuad();
 
-				filmGrain.disable();
+				filmGrain->disable();
 				postBuff->disable();
 			#pragma endregion
 				break;
@@ -856,7 +864,7 @@ public:
 
 				FrameBuffer::disable();//return to base frame buffer
 
-				glViewport(0, 0, Game::getWindowWidth(), Game::getWindowHeight());
+				m_greyscaleBuffer->setViewport(0, 0, 0);
 
 				m_greyscaleBuffer->enable();
 				m_blurrComposite->enable();
@@ -888,8 +896,6 @@ public:
 			}
 
 		#pragma region LUT/Grayscale
-			//glClearDepth(1.f);
-			//glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 
 
 			//3D look up table being applied and grayscale
@@ -897,14 +903,12 @@ public:
 			m_lutNGrayscaleShader->enable();
 
 			m_lutNGrayscaleShader->sendUniform("uTex", 0);//previous colour buffer
-			m_lutNGrayscaleShader->sendUniform("customTexure", 6);//LUT
+			m_lutNGrayscaleShader->sendUniform("customTexure", 1);//LUT
 			m_lutNGrayscaleShader->sendUniform("lutSize", ResourceManager::getTextureLUT(lutPath.c_str()).lutSize);
 			m_lutNGrayscaleShader->sendUniform("lutActive", lutActive);
 
-			glActiveTexture(GL_TEXTURE0);
-			glBindTexture(GL_TEXTURE_2D, postBuff->getColorHandle(0));//previous colour buffer
-			glActiveTexture(GL_TEXTURE6);
-			glBindTexture(GL_TEXTURE_3D, ResourceManager::getTextureLUT(lutPath.c_str()).id);//LUT
+			postBuff->getColorTexture(0).bindTexture(0);//previous colour buffer
+			ResourceManager::getTextureLUT(lutPath.c_str()).bindTexture(1);//LUT
 
 			FrameBuffer::drawFullScreenQuad();
 
@@ -937,21 +941,48 @@ public:
 			//Outline
 			postBuff->enable();
 			m_sobel->enable();
-			
-			m_sobel->sendUniform("uNormalMap",0);
-			m_sobel->sendUniform("uDepthMap",1);
-			m_sobel->sendUniform("uSceneTex",2);
-			m_sobel->sendUniform("uPixelSize", Vec2{1/(float)postBuff->getColourWidth(0),1/(float)postBuff->getColourHeight(0)});
-			
-			Texture2D::bindTexture(0,gbuff->getColorHandle(2));
-			Texture2D::bindTexture(1,gbuff->getDepthHandle());
-			Texture2D::bindTexture(2,postBuff->getColorHandle(0));
+
+			m_sobel->sendUniform("uNormalMap", 0);
+			m_sobel->sendUniform("uSceneTex", 1);
+			m_sobel->sendUniform("uDepthMap", 2);
+			m_sobel->sendUniform("uPixelSize", Vec2{1 / (float)postBuff->getColourWidth(0),1 / (float)postBuff->getColourHeight(0)});
+
+			gbuff->getColorTexture(2).bindTexture(0);
+			postBuff->getColorTexture(0).bindTexture(1);
+			Texture2D::bindTexture(2, gbuff->getDepthHandle());
 
 			postBuff->drawFullScreenQuad();
 
 			m_sobel->disable();
 			postBuff->disable();
-		#pragma endregionc
+		#pragma endregion
+
+
+
+		#pragma region Screen Shake
+
+		#define shake(amount) ((rand() % amount) * (rand() % 2 ? 1 : -1))
+
+			static bool center = true;
+			if(!center)
+				m_screenshake->setViewport(shake(10), shake(10), 0);
+
+			center = !center;
+
+			Shader* shaker = ResourceManager::getShader("Shaders/Main Buffer.vtsh", "shaders/Main Buffer.fmsh");
+
+			m_screenshake->enable();
+			shaker->enable();
+			shaker->sendUniform("uTex", 0);
+			postBuff->getColorTexture(0).bindTexture(0);
+
+			m_screenshake->drawFullScreenQuad();
+
+			shaker->disable();
+			m_screenshake->disable();
+
+			m_screenshake->moveSingleColourToBuffer(postBuff->getColourWidth(0), postBuff->getColourHeight(0), postBuff);
+		#pragma endregion
 		};
 
 		_map.create(new PrimitivePlane(Vec3(40.0f, 0.0f, 40.0f)));
@@ -1269,7 +1300,7 @@ public:
 int main()
 {
 	Game::init("Da Game", 1620, 780);
-	GDWGAME test;
+	Test test;
 
 	//Song song;//just another scene... move along
 	Game::setScene(&test);

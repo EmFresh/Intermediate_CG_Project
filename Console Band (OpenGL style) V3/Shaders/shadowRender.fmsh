@@ -1,3 +1,4 @@
+#version 420
 
 uniform sampler2D uScene;
 uniform sampler2D uShadows;

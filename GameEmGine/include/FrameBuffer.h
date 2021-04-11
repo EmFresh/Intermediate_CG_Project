@@ -53,7 +53,8 @@ public:
 	///~ Helper Functions ~///
 
 
-	void setViewport(int x, int y, int width, int height)const;
+	void setViewport(int x, int y, int width, int height);
+	void setViewport(int x, int y, uint colourIndex);
 
 	void moveColourToBackBuffer(int windowWidth, int windowHeight);
 	void moveColourToBuffer(int windowWidth, int windowHeight, FrameBuffer* fboID);
