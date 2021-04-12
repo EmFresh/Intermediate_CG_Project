@@ -197,7 +197,6 @@ bool Camera::cull(Model* mod)
 	auto center = mod->getCenter();
 	auto dim = mod->getDimentions();
 
-
 	glm::vec4 tmpTrans = glm::vec4(center.toVec3(), 1);
 
 	tmpTrans = getCameraMatrix() * tmpTrans;

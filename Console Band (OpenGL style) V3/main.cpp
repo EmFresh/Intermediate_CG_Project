@@ -39,7 +39,7 @@ class Test: public Scene
 	Transformer trans[10];
 	Model bigBoss[2];
 	Model rocket;
-	vector<Light> lights;
+	vector<std::shared_ptr<Light>> lights;
 
 	Text testText;
 	//Light lit;
@@ -49,6 +49,7 @@ class Test: public Scene
 
 #pragma endregion
 
+	bool newLight = false;
 public:
 	int blurPasses = 2;
 
@@ -201,22 +202,23 @@ public:
 		srand(time(nullptr));
 		for(auto& light : lights)
 		{
-			light.setLightType(Light::POINT);
+			light = std::shared_ptr<Light>(new Light);
+			light->setLightType(Light::POINT);
 
-			light.setDiffuse(ColourRGBA(rand() % 256, rand() % 256, rand() % 256));
-			light.translate((rand() % 200) + (rand() % 1000 * .001) - 100,
-							(rand() % 5) + (rand() % 1000 * .001),
-							(rand() % 200) + (rand() % 1000 * .001) - 100);
+			light->setDiffuse(ColourRGBA(rand() % 256, rand() % 256, rand() % 256));
+			light->translate((rand() % 200) + (rand() % 1000 * .001) - 100,
+							 (rand() % 5) + (rand() % 1000 * .001),
+							 (rand() % 200) + (rand() % 1000 * .001) - 100);
 
-			light.volumeLight = 2.f;
-			light.addChild(new Model(tmp));
-			reinterpret_cast<Model*>(light.getChild(0))->setColour(light.diffuse);
-			reinterpret_cast<Model*>(light.getChild(0))->setCastShadow(false);
-			reinterpret_cast<Model*>(light.getChild(0))->setScale(light.volumeLight);
+			light->volumeLight = 2.f;
+			light->addChild(new Model(tmp));
+			reinterpret_cast<Model*>(light->getChild(0))->setColour(light->diffuse);
+			reinterpret_cast<Model*>(light->getChild(0))->setCastShadow(false);
+			reinterpret_cast<Model*>(light->getChild(0))->setScale(light->volumeLight);
 
 
-			LightManager::addLight(&light);
-			Game::addModel((Model*)light.getChild(0));
+			LightManager::addLight(light.get());
+			Game::addModel((Model*)light->getChild(0));
 		}
 
 	#pragma endregion
@@ -236,27 +238,8 @@ public:
 
 			if(key == 'N')
 				rocket.setWireframe(frame = !frame);
-
-			if(key == '+')
-			{
-				lights.resize(lights.size() + 1);
-				lights.back().setLightType(Light::POINT);
-
-				lights.back().setDiffuse(ColourRGBA(rand() % 256, rand() % 256, rand() % 256));
-				lights.back().translate((rand() % 200) + (rand() % 1000 * .001) - 100,
-								(rand() % 5) + (rand() % 1000 * .001),
-								(rand() % 200) + (rand() % 1000 * .001) - 100);
-
-				lights.back().volumeLight = 2.f;
-				lights.back().addChild(new Model(tmp));
-				reinterpret_cast<Model*>(lights.back().getChild(0))->setColour(lights.back().diffuse);
-				reinterpret_cast<Model*>(lights.back().getChild(0))->setCastShadow(false);
-				reinterpret_cast<Model*>(lights.back().getChild(0))->setScale(lights.back().volumeLight);
-
-
-				LightManager::addLight(&lights.back());
-				Game::addModel((Model*)lights.back().getChild(0));
-			}
+			if(key == GLFW_KEY_EQUAL)
+				newLight = true;
 
 			if(key == GLFW_KEY_SPACE)
 				pause = !pause;
@@ -276,7 +259,7 @@ public:
 			if(key == GLFW_KEY_2)
 				for(auto& light : lights)
 				{
-					reinterpret_cast<Model*>(light.getChild(0))->setActive(!reinterpret_cast<Model*>(light.getChild(0))->isActive());
+					reinterpret_cast<Model*>(light->getChild(0))->setActive(!reinterpret_cast<Model*>(light->getChild(0))->isActive());
 				}
 			static bool fps = 0;
 			if(key == 'F')
@@ -404,31 +387,31 @@ public:
 	{
 		// Movement
 		if(moveLeft)
-			lights[0].translateBy({-speed * dt,0.f,0.f});
+			lights[0]->translateBy({-speed * dt,0.f,0.f});
 		if(moveRight)
-			lights[0].translateBy({speed * dt,0,0});
+			lights[0]->translateBy({speed * dt,0,0});
 		if(moveForward)
-			lights[0].translateBy({0,0,speed * dt});
+			lights[0]->translateBy({0,0,speed * dt});
 		if(moveBack)
-			lights[0].translateBy({0,0,-speed * dt});
+			lights[0]->translateBy({0,0,-speed * dt});
 		if(moveUp)
-			lights[0].translateBy({0,speed * dt,0});
+			lights[0]->translateBy({0,speed * dt,0});
 		if(moveDown)
-			lights[0].translateBy({0,-speed * dt,0});
+			lights[0]->translateBy({0,-speed * dt,0});
 
 		// Rotation
 		if(rotLeft)
-			lights[0].rotateBy({0,-angle,0});
+			lights[0]->rotateBy({0,-angle,0});
 		if(rotRight)
-			lights[0].rotateBy({0,angle,0});
+			lights[0]->rotateBy({0,angle,0});
 		if(tiltLeft)
-			lights[0].rotateBy({0,0,-angle});
+			lights[0]->rotateBy({0,0,-angle});
 		if(tiltRight)
-			lights[0].rotateBy({0,0,angle});
+			lights[0]->rotateBy({0,0,angle});
 		if(rotDown)
-			lights[0].rotateBy({-angle,0,0});
+			lights[0]->rotateBy({-angle,0,0});
 		if(rotUp)
-			lights[0].rotateBy({angle,0,0});
+			lights[0]->rotateBy({angle,0,0});
 
 
 	}
@@ -440,17 +423,43 @@ public:
 		else
 			lightMovement((float)dt);
 
+		static Model tmp(new PrimitiveSphere(1, 1, 20, 20), "Volume");
+		static vector<bool> goDown = vector<bool>(lights.size(), false);
+		if(newLight)
+		{
+			newLight = false;
+			lights.push_back(std::shared_ptr<Light>(new Light));
+
+			goDown.push_back(false);
+			lights.back()->setLightType(Light::POINT);
+
+			lights.back()->setDiffuse(ColourRGBA(rand() % 256, rand() % 256, rand() % 256));
+			lights.back()->translate((rand() % 200) + (rand() % 1000 * .001) - 100,
+									 (rand() % 5) + (rand() % 1000 * .001),
+									 (rand() % 200) + (rand() % 1000 * .001) - 100);
+
+			lights.back()->volumeLight = 2.f;
+			lights.back()->addChild(new Model(tmp));
+			reinterpret_cast<Model*>(lights.back()->getChild(0))->setColour(lights.back()->diffuse);
+			reinterpret_cast<Model*>(lights.back()->getChild(0))->setCastShadow(false);
+			reinterpret_cast<Model*>(lights.back()->getChild(0))->setScale(lights.back()->volumeLight);
+
+
+			LightManager::addLight(lights.back().get());
+			Game::addModel((Model*)lights.back()->getChild(0));
+		}
+
+
 		float maxSpeed = 10;
 
-		static vector<bool> goDown = vector<bool>(lights.size(), false);
 		uint count = 0;
 		for(auto& light : lights)
 		{
-			light.translateBy(0, maxSpeed * dt * (goDown[count] ? -1 : 1), 0);
+			light->translateBy(0, maxSpeed * dt * (goDown[count] ? -1 : 1), 0);
 
-			if(light.getLocalPosition().y >= 5)
+			if(light->getLocalPosition().y >= 5)
 				goDown[count] = true;
-			if(light.getLocalPosition().y <= 0)
+			if(light->getLocalPosition().y <= 0)
 				goDown[count] = false;
 
 			++count;
