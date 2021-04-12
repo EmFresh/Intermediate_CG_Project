@@ -19,7 +19,7 @@ class Test: public Scene
 	enum Switches
 	{
 		DefaultScene = 0,
-		Position,
+		Position = 2,
 		Normal,
 		colour,
 		lightAccumulation,
@@ -251,8 +251,13 @@ public:
 
 			for(int a = 0; a < 8; ++a)
 				if(key == GLFW_KEY_1 + a)
+					if(a!=1)
 					toggle = (Switches)a;
-
+			if(key == GLFW_KEY_2)
+				for(auto& light : lights)
+				{
+					reinterpret_cast<Model*>(light.getChild(0))->setActive(!reinterpret_cast<Model*>(light.getChild(0))->isActive());
+				}
 			static bool fps = 0;
 			if(key == 'F')
 				rocket.enableFPSMode(fps = !fps);
