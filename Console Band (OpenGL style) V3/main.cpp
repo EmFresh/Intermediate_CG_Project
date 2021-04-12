@@ -198,7 +198,7 @@ public:
 		Model tmp(new PrimitiveSphere(1, 1, 20, 20), "Volume");
 		tmp.setWireframe(true);
 
-		lights.resize(4);
+		lights.resize(20);
 		srand(time(nullptr));
 		for(auto& light : lights)
 		{
@@ -209,10 +209,12 @@ public:
 							(rand() % 5) + (rand() % 1000 * .001),
 							(rand() % 200) + (rand() % 1000 * .001) - 100);
 
+			light.volumeLight = 2.f;
 			light.addChild(new Model(tmp));
 			reinterpret_cast<Model*>(light.getChild(0))->setColour(light.diffuse);
 			reinterpret_cast<Model*>(light.getChild(0))->setCastShadow(false);
 			reinterpret_cast<Model*>(light.getChild(0))->setScale(light.volumeLight);
+			
 
 			LightManager::addLight(&light);
 			Game::addModel((Model*)light.getChild(0));
