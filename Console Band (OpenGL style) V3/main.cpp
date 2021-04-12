@@ -79,11 +79,10 @@ public:
 			Shader* filmGrain = ResourceManager::getShader("Shaders/Main Buffer.vtsh", "shaders/filmgrain.fmsh");
 			Shader* pixel = ResourceManager::getShader("Shaders/Main Buffer.vtsh", "shaders/pixelation.fmsh");
 
-			//postBuff->setViewport(0, 0, 0);//will screw up not showing the fps when not here
+			postBuff->setViewport(0, 0, 0);//will screw up not showing the fps when not here
 			switch(toggle)
 			{
 			case Switches::DefaultScene:
-
 				break;
 			case Switches::Position:
 				gbuff->copySingleColourToBuffer(postBuff->getColourWidth(0), postBuff->getColourHeight(0), postBuff, 0);
@@ -198,7 +197,7 @@ public:
 		Model tmp(new PrimitiveSphere(1, 1, 20, 20), "Volume");
 		tmp.setWireframe(true);
 
-		lights.resize(20);
+		lights.resize(5);
 		srand(time(nullptr));
 		for(auto& light : lights)
 		{
@@ -214,7 +213,7 @@ public:
 			reinterpret_cast<Model*>(light.getChild(0))->setColour(light.diffuse);
 			reinterpret_cast<Model*>(light.getChild(0))->setCastShadow(false);
 			reinterpret_cast<Model*>(light.getChild(0))->setScale(light.volumeLight);
-			
+
 
 			LightManager::addLight(&light);
 			Game::addModel((Model*)light.getChild(0));
@@ -238,6 +237,27 @@ public:
 			if(key == 'N')
 				rocket.setWireframe(frame = !frame);
 
+			if(key == '+')
+			{
+				lights.resize(lights.size() + 1);
+				lights.back().setLightType(Light::POINT);
+
+				lights.back().setDiffuse(ColourRGBA(rand() % 256, rand() % 256, rand() % 256));
+				lights.back().translate((rand() % 200) + (rand() % 1000 * .001) - 100,
+								(rand() % 5) + (rand() % 1000 * .001),
+								(rand() % 200) + (rand() % 1000 * .001) - 100);
+
+				lights.back().volumeLight = 2.f;
+				lights.back().addChild(new Model(tmp));
+				reinterpret_cast<Model*>(lights.back().getChild(0))->setColour(lights.back().diffuse);
+				reinterpret_cast<Model*>(lights.back().getChild(0))->setCastShadow(false);
+				reinterpret_cast<Model*>(lights.back().getChild(0))->setScale(lights.back().volumeLight);
+
+
+				LightManager::addLight(&lights.back());
+				Game::addModel((Model*)lights.back().getChild(0));
+			}
+
 			if(key == GLFW_KEY_SPACE)
 				pause = !pause;
 			//enableSkyBox(sky = !sky);
@@ -251,8 +271,8 @@ public:
 
 			for(int a = 0; a < 8; ++a)
 				if(key == GLFW_KEY_1 + a)
-					if(a!=1)
-					toggle = (Switches)a;
+					if(a != 1)
+						toggle = (Switches)a;
 			if(key == GLFW_KEY_2)
 				for(auto& light : lights)
 				{
