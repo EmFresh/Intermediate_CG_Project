@@ -543,7 +543,6 @@ public:
 	void onSceneExit() {}
 };
 
-#pragma region GDW GAME STUFF
 
 //Game Design Doc
 /*
@@ -898,27 +897,27 @@ public:
 
 		#pragma region Screen Shake
 
-		#define shake(amount) ((rand() % amount) * (rand() % 2 ? 1 : -1))
-
-			static bool center = true;
-			if(!center)
-				m_screenshake->setViewport(shake(10), shake(10), 0);
-
-			center = !center;
-
-			Shader* shaker = ResourceManager::getShader("Shaders/Main Buffer.vtsh", "shaders/Main Buffer.fmsh");
-
-			m_screenshake->enable();
-			shaker->enable();
-			shaker->sendUniform("uTex", 0);
-			postBuff->getColorTexture(0).bindTexture(0);
-
-			m_screenshake->drawFullScreenQuad();
-
-			shaker->disable();
-			m_screenshake->disable();
-
-			m_screenshake->copySingleColourToBuffer(postBuff->getColourWidth(0), postBuff->getColourHeight(0), postBuff);
+		//#define shake(amount) ((rand() % amount) * (rand() % 2 ? 1 : -1))
+		//
+		//	static bool center = true;
+		//	if(!center)
+		//		m_screenshake->setViewport(shake(10), shake(10), 0);
+		//
+		//	center = !center;
+		//
+		//	Shader* shaker = ResourceManager::getShader("Shaders/Main Buffer.vtsh", "shaders/Main Buffer.fmsh");
+		//
+		//	m_screenshake->enable();
+		//	shaker->enable();
+		//	shaker->sendUniform("uTex", 0);
+		//	postBuff->getColorTexture(0).bindTexture(0);
+		//
+		//	m_screenshake->drawFullScreenQuad();
+		//
+		//	shaker->disable();
+		//	m_screenshake->disable();
+		//
+		//	m_screenshake->copySingleColourToBuffer(postBuff->getColourWidth(0), postBuff->getColourHeight(0), postBuff);
 		#pragma endregion
 		};
 
@@ -1018,6 +1017,7 @@ public:
 
 			tower->setEnemyList(&enemies);
 			tower->setSongBPM(beats[0].bpm);
+			tower->setCastShadow(false);
 			std::vector<Model*>  tmp;
 
 
@@ -1047,7 +1047,7 @@ public:
 
 
 		lit.setLightType(Light::TYPE::DIRECTIONAL);
-		lit.rotate(-15, 0, 0);
+		lit.rotate(-45, 0, 0);
 		LightManager::addLight(&lit);
 		setSkyBox("Skyboxes/skybox/");
 		enableSkyBox(true);
@@ -1232,12 +1232,12 @@ public:
 
 	void onSceneExit() {}
 };
-#pragma endregion
+
 
 int main()
 {
 	Game::init("Da Game", 1620, 780);
-	Test test;
+	GDWGAME test;
 
 	//Song song;//just another scene... move along
 	Game::setScene(&test);

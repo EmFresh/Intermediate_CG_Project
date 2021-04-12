@@ -64,7 +64,7 @@ bool MeshLoader::load(std::string path)
 	bool initFace = true;
 #pragma endregion
 	std::string binPath = (path.substr(0, path.find('/') + 1) + "BIN") + path.substr(path.find_last_of('/'), path.find_first_of('.') - path.find_last_of('/') + 1) + "bin";
-	auto lasttime = fs::last_write_time(binPath);
+	auto lasttime = fs::exists(binPath)?fs::last_write_time(binPath):fs::file_time_type();
 	auto lasttime2 = fs::last_write_time(path);
 	if(!fs::exists(binPath) || (lasttime < lasttime2))
 	{
