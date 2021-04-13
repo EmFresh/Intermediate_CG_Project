@@ -589,7 +589,7 @@ class GDWGAME: public Scene
 #pragma region Variables
 	Light lit;
 
-	float speed = 20, angle = 1, bloomThresh = 0.1f;
+	float speed = 20, angle = 1, bloomThresh = 0.1f, shakeTimer = 0;
 
 	bool moveLeft, moveRight, moveForward, moveBack, moveUp, moveDown,
 		rotLeft, rotRight, rotUp, rotDown, tiltLeft, tiltRight,
@@ -651,6 +651,14 @@ public:
 	~GDWGAME()
 	{
 
+	}
+
+	void resetCamera()
+	{
+		//&Positions
+		Game::translateCamera({0.0f, 45.0f, -20.0f});
+		Game::rotateCamera({-70.0f, 0.0f, 0.0f});
+		Game::getMainCamera()->enableFPSMode(true);
 	}
 
 #include <ctime>
@@ -720,6 +728,7 @@ public:
 		customPostEffects =
 			[&](FrameBuffer* gbuff, FrameBuffer* postBuff, float dt)->void
 		{
+			shakeTimer = std::max(shakeTimer - dt, 0.0f);
 			m_greyscaleBuffer->clear();
 			m_buffer1->clear();
 			m_buffer2->clear();
@@ -896,28 +905,29 @@ public:
 
 
 		#pragma region Screen Shake
+			if(shakeTimer <= 0)return;
 
-		//#define shake(amount) ((rand() % amount) * (rand() % 2 ? 1 : -1))
-		//
-		//	static bool center = true;
-		//	if(!center)
-		//		m_screenshake->setViewport(shake(10), shake(10), 0);
-		//
-		//	center = !center;
-		//
-		//	Shader* shaker = ResourceManager::getShader("Shaders/Main Buffer.vtsh", "shaders/Main Buffer.fmsh");
-		//
-		//	m_screenshake->enable();
-		//	shaker->enable();
-		//	shaker->sendUniform("uTex", 0);
-		//	postBuff->getColorTexture(0).bindTexture(0);
-		//
-		//	m_screenshake->drawFullScreenQuad();
-		//
-		//	shaker->disable();
-		//	m_screenshake->disable();
-		//
-		//	m_screenshake->copySingleColourToBuffer(postBuff->getColourWidth(0), postBuff->getColourHeight(0), postBuff);
+		#define shake(amount) ((rand() % amount) * (rand() % 2 ? 1 : -1))
+
+			static bool center = true;
+			if(!center)
+				m_screenshake->setViewport(shake(10), shake(10), 0);
+
+			center = !center;
+
+			Shader* shaker = ResourceManager::getShader("Shaders/Main Buffer.vtsh", "shaders/Main Buffer.fmsh");
+
+			m_screenshake->enable();
+			shaker->enable();
+			shaker->sendUniform("uTex", 0);
+			postBuff->getColorTexture(0).bindTexture(0);
+
+			m_screenshake->drawFullScreenQuad();
+
+			shaker->disable();
+			m_screenshake->disable();
+
+			m_screenshake->copySingleColourToBuffer(postBuff->getColourWidth(0), postBuff->getColourHeight(0), postBuff);
 		#pragma endregion
 		};
 
@@ -941,12 +951,12 @@ public:
 		for(auto& point : points)
 		{
 			point = std::shared_ptr<WayPoint>(new WayPoint());
-			point->create(new PrimitiveSphere(.5, .5, 10, 10, {0,.25,0}));
+			//point->create(new PrimitiveSphere(.5, .5, 10, 10, {0,.25,0}));
 			point->setColour(1, 0.5, 0.5);
 			//point->translate(!(count % 2) ? -_map.getWidth()*.5 : _map.getWidth() * .5, 0, _map.getDepth() * .5 - ((float)count/points.size() * _map.getDepth()));
 			point->translate(Vec3(_map.getWidth(), 0, _map.getDepth()));
 			point->setScale(1);
-			Game::addModel(point.get());
+			//Game::addModel(point.get());
 			++count;
 		}
 
@@ -996,7 +1006,7 @@ public:
 		for(auto& tower : towers)
 		{
 			//change to do different towers
-			int rando = std::rand() % 3;
+			int rando = count % 3;
 			switch(rando)
 			{
 			case 0:
@@ -1040,11 +1050,8 @@ public:
 		//enemies[0]->setWayPoints(points);
 
 
-		//Lights & Positions
-		Game::translateCamera({0.0f, 45.0f, -20.0f});
-		Game::rotateCamera({-70.0f, 0.0f, 0.0f});
-		Game::getMainCamera()->enableFPSMode(true);
-
+		//Lights & positions
+		resetCamera();
 
 		lit.setLightType(Light::TYPE::DIRECTIONAL);
 		lit.rotate(-45, 0, 0);
@@ -1053,17 +1060,16 @@ public:
 		enableSkyBox(true);
 
 
+		//Key Presses
 		keyPressed =
 			[&](int key, int mod)->void
 		{
 
-
-
 			if(key == 'R')
-			{
-				Game::getMainCamera()->reset();
-				Game::translateCamera({0,0,-3});
-			}
+				resetCamera();
+
+			if(key == GLFW_KEY_ESCAPE)
+				Game::exit();
 
 			static bool sky = true, frame = false;
 			if(key == GLFW_KEY_SPACE)
@@ -1214,16 +1220,20 @@ public:
 			if(!a.get())continue;
 			a->update((float)dt);
 
+			//Enemy Killed
 			if(a->getHealth() <= 0)
 			{
 				Game::removeModel(a.get());
 				enemies.erase(std::find(enemies.begin(), enemies.end(), a));
+				continue;
 			}
 
+			//if enemy reaches the end
 			if(!a->isActive())
 			{
 				Game::removeModel(a.get());
 				enemies.erase(std::find(enemies.begin(), enemies.end(), a));
+				shakeTimer += 0.6f;
 			}
 		}
 

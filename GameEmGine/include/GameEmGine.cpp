@@ -589,17 +589,16 @@ void GameEmGine::changeViewport(GLFWwindow*, int w, int h)
 	m_screenSize = {w,h};
 	glViewport(0, 0, w, h);
 
-	switch(m_mainCamera->getType())
-	{
-	case Camera::FRUSTUM:
-
-		FrustumPeramiters* tmp = (FrustumPeramiters*)m_mainCamera->getProjectionData();
-		if(tmp)
-			tmp->aspect = (float)w / h;
-		m_mainCamera->setType(m_mainCamera->getType(), tmp);
-		break;
-	}
-
+//	switch(m_mainCamera->getType())
+//	{
+//	case Camera::FRUSTUM:
+//
+//		FrustumPeramiters* tmp = (FrustumPeramiters*)m_mainCamera->getProjectionData();
+//		if(tmp)
+//			tmp->aspect = (float)w / h;
+//		m_mainCamera->setType(m_mainCamera->getType(), tmp);
+//		break;
+//	}
 
 	//Framebuffer Resizing 
 	m_gBuffer->resizeDepth(w, h);
@@ -612,8 +611,5 @@ void GameEmGine::changeViewport(GLFWwindow*, int w, int h)
 
 	m_postBuffer->resizeDepth(w, h);
 	m_postBuffer->resizeColour(0, w, h);
-
-	//m_buffer1->resizeColour(0, unsigned((float)w / SCREEN_RATIO), unsigned((float)h / SCREEN_RATIO));
-	//m_buffer2->resizeColour(0, unsigned((float)w / SCREEN_RATIO), unsigned((float)h / SCREEN_RATIO));
 
 }
