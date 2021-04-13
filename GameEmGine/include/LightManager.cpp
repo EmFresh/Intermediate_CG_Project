@@ -64,6 +64,7 @@ void LightManager::shadowRender(unsigned w, unsigned h, FrameBuffer* to, const F
 	for(uint a = 0; a < m_lights.size(); ++a)
 	{
 		if(!m_lights[a]->shadowEnable)continue;
+		if(!m_lights[a]->lightEnable)continue;
 
 		if(m_lights[a]->type == Light::TYPE::DIRECTIONAL)
 		{

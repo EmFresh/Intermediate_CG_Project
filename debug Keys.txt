@@ -1,0 +1,12 @@
+There is no actual gameplay in this game sadly :(
+but it still feels nice
+
+QWEASD - Movement
+Aero Keys = rotation
+
+1 = toggle lights
+2 = toggle active model textures
+3 = toggle colour correction
+4 = colour correction warm
+5 = colour correction cold
+6 = colour correction custom

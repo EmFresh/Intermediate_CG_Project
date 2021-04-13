@@ -577,13 +577,13 @@ class GDWGAME: public Scene
 	enum Switches
 	{
 		DefaultScene = 0,
-		Position,
-		Normal,
-		colour,
-		lightAccumulation,
-		post1,
-		post2,
-		post3
+		Lights,
+		Textures,
+		ColourToggle,
+		Warm,
+		Cool,
+		CustumColour,
+
 	};
 
 #pragma region Variables
@@ -595,7 +595,7 @@ class GDWGAME: public Scene
 		rotLeft, rotRight, rotUp, rotDown, tiltLeft, tiltRight,
 		tab = false, lutActive = false, enableBloom = false, pause = false;
 
-	Switches toggle = post1;
+	Switches toggle = DefaultScene;
 	uint blurPasses = 3;
 
 	Model _map;
@@ -655,7 +655,8 @@ public:
 
 	void resetCamera()
 	{
-		//&Positions
+		Game::getMainCamera()->enableFPSMode(false);
+		Game::getMainCamera()->reset();
 		Game::translateCamera({0.0f, 45.0f, -20.0f});
 		Game::rotateCamera({-70.0f, 0.0f, 0.0f});
 		Game::getMainCamera()->enableFPSMode(true);
@@ -737,111 +738,82 @@ public:
 			static float timer = 0;
 			static Shader* filmGrain = ResourceManager::getShader("Shaders/Main Buffer.vtsh", "shaders/filmgrain.fmsh");
 
-			switch(toggle)
+
+		#pragma region Bloom
+			glViewport(0, 0, Game::getWindowWidth() / 2, Game::getWindowHeight() / 2);
+
+			//binds the initial high pass to buffer 1
+			m_buffer1->enable();
+			m_bloomHighPass->enable();
+
+			glActiveTexture(GL_TEXTURE0);
+			glBindTexture(GL_TEXTURE_2D, postBuff->getColorHandle(0));
+
+			m_bloomHighPass->sendUniform("uTex", 0);
+			m_bloomHighPass->sendUniform("uThresh", bloomThresh);
+
+			FrameBuffer::drawFullScreenQuad();
+
+			glActiveTexture(GL_TEXTURE0);
+			glBindTexture(GL_TEXTURE_2D, GL_NONE);
+
+			m_bloomHighPass->disable();
+			m_buffer1->disable();
+
+			//Takes the high pass and blurs it
+			//glViewport(0, 0, Game::getWindowWidth() / 2, Game::getWindowHeight() / 2);
+			for(int a = 0; a < blurPasses; a++)
 			{
-			case post1:
-			#pragma region Post 1
-				//glViewport(0, 0, Game::getWindowWidth(), Game::getWindowHeight());
-
-				//Film Grain
-				postBuff->enable();
-				filmGrain->enable();
-
-				glActiveTexture(GL_TEXTURE0);
-				glBindTexture(GL_TEXTURE_2D, postBuff->getColorHandle(0));
-
-				filmGrain->sendUniform("colorMap", 0);
-				filmGrain->sendUniform("time", timer += dt);
-
-				FrameBuffer::drawFullScreenQuad();
-
-				filmGrain->disable();
-				postBuff->disable();
-			#pragma endregion
-				break;
-			case post2:
-			#pragma region Bloom
-				glViewport(0, 0, Game::getWindowWidth() / 2, Game::getWindowHeight() / 2);
-
-				//binds the initial high pass to buffer 1
-				m_buffer1->enable();
-				m_bloomHighPass->enable();
-
-				glActiveTexture(GL_TEXTURE0);
-				glBindTexture(GL_TEXTURE_2D, postBuff->getColorHandle(0));
-
-				m_bloomHighPass->sendUniform("uTex", 0);
-				m_bloomHighPass->sendUniform("uThresh", bloomThresh);
-
-				FrameBuffer::drawFullScreenQuad();
-
-				glActiveTexture(GL_TEXTURE0);
-				glBindTexture(GL_TEXTURE_2D, GL_NONE);
-
-				m_bloomHighPass->disable();
-				m_buffer1->disable();
-
-				//Takes the high pass and blurs it
-				//glViewport(0, 0, Game::getWindowWidth() / 2, Game::getWindowHeight() / 2);
-				for(int a = 0; a < blurPasses; a++)
-				{
-					m_buffer2->enable();
-					m_blurHorizontal->enable();
-					m_blurHorizontal->sendUniform("uTex", 0);
-					m_blurHorizontal->sendUniform("uPixleSize", 1.0f / Game::getWindowHeight());
-					glBindTexture(GL_TEXTURE_2D, m_buffer1->getColorHandle(0));
-					FrameBuffer::drawFullScreenQuad();
-
-					glBindTexture(GL_TEXTURE_2D, GL_NONE);
-					m_blurHorizontal->disable();
-
-
-					m_buffer1->enable();
-					m_blurVertical->enable();
-					m_blurVertical->sendUniform("uTex", 0);
-					m_blurVertical->sendUniform("uPixleSize", 1.0f / Game::getWindowWidth());
-					glBindTexture(GL_TEXTURE_2D, m_buffer2->getColorHandle(0));
-					FrameBuffer::drawFullScreenQuad();
-
-					glBindTexture(GL_TEXTURE_2D, GL_NONE);
-					m_blurVertical->disable();
-				}
-
-				FrameBuffer::disable();//return to base frame buffer
-
-				m_greyscaleBuffer->setViewport(0, 0, 0);
-
-				m_greyscaleBuffer->enable();
-				m_blurrComposite->enable();
-				glActiveTexture(GL_TEXTURE0);
-				m_blurrComposite->sendUniform("uScene", 0);
-				glBindTexture(GL_TEXTURE_2D, postBuff->getColorHandle(0));
-
-				glActiveTexture(GL_TEXTURE1);
-				m_blurrComposite->sendUniform("uBloom", 1);
+				m_buffer2->enable();
+				m_blurHorizontal->enable();
+				m_blurHorizontal->sendUniform("uTex", 0);
+				m_blurHorizontal->sendUniform("uPixleSize", 1.0f / Game::getWindowHeight());
 				glBindTexture(GL_TEXTURE_2D, m_buffer1->getColorHandle(0));
-
-				m_blurrComposite->sendUniform("uBloomEnable", enableBloom);
 				FrameBuffer::drawFullScreenQuad();
 
-				glActiveTexture(GL_TEXTURE1);
 				glBindTexture(GL_TEXTURE_2D, GL_NONE);
-				glActiveTexture(GL_TEXTURE0);
-				glBindTexture(GL_TEXTURE_2D, GL_NONE);
-				m_blurrComposite->disable();
-				m_greyscaleBuffer->disable();
-				m_greyscaleBuffer->copyColourToBuffer(postBuff->getDepthWidth(), postBuff->getDepthWidth(), postBuff);
-			#pragma endregion
-				break;
-			case post3:
-			#pragma region Post 3
+				m_blurHorizontal->disable();
 
-			#pragma endregion
-				break;
+
+				m_buffer1->enable();
+				m_blurVertical->enable();
+				m_blurVertical->sendUniform("uTex", 0);
+				m_blurVertical->sendUniform("uPixleSize", 1.0f / Game::getWindowWidth());
+				glBindTexture(GL_TEXTURE_2D, m_buffer2->getColorHandle(0));
+				FrameBuffer::drawFullScreenQuad();
+
+				glBindTexture(GL_TEXTURE_2D, GL_NONE);
+				m_blurVertical->disable();
 			}
 
-		#pragma region LUT/Grayscale
+			FrameBuffer::disable();//return to base frame buffer
 
+			m_greyscaleBuffer->setViewport(0, 0, 0);
+
+			m_greyscaleBuffer->enable();
+			m_blurrComposite->enable();
+			glActiveTexture(GL_TEXTURE0);
+			m_blurrComposite->sendUniform("uScene", 0);
+			glBindTexture(GL_TEXTURE_2D, postBuff->getColorHandle(0));
+
+			glActiveTexture(GL_TEXTURE1);
+			m_blurrComposite->sendUniform("uBloom", 1);
+			glBindTexture(GL_TEXTURE_2D, m_buffer1->getColorHandle(0));
+
+			m_blurrComposite->sendUniform("uBloomEnable", enableBloom);
+			FrameBuffer::drawFullScreenQuad();
+
+			glActiveTexture(GL_TEXTURE1);
+			glBindTexture(GL_TEXTURE_2D, GL_NONE);
+			glActiveTexture(GL_TEXTURE0);
+			glBindTexture(GL_TEXTURE_2D, GL_NONE);
+			m_blurrComposite->disable();
+			m_greyscaleBuffer->disable();
+			m_greyscaleBuffer->copyColourToBuffer(postBuff->getDepthWidth(), postBuff->getDepthWidth(), postBuff);
+		#pragma endregion
+
+		#pragma region LUT/Grayscale
+			postBuff->setViewport(0, 0, 0);
 
 			//3D look up table being applied and grayscale
 			postBuff->enable();
@@ -867,6 +839,7 @@ public:
 		#pragma endregion
 
 		#pragma region Toon Shading
+			postBuff->setViewport(0, 0, 0);
 
 			//Shading
 			postBuff->enable();
@@ -901,8 +874,6 @@ public:
 			m_sobel->disable();
 			postBuff->disable();
 		#pragma endregion
-
-
 
 		#pragma region Screen Shake
 			if(shakeTimer <= 0)return;
@@ -1075,6 +1046,28 @@ public:
 			if(key == GLFW_KEY_SPACE)
 				pause = !pause;
 
+			static bool texEn = true;
+			if(key == GLFW_KEY_1)
+			{
+				_map.enableTexture(!texEn);
+				for(auto& a : enemies)
+					a->enableTexture(!texEn);
+				texEn = !texEn;
+			}
+			if(key == GLFW_KEY_2)
+			{
+				lit.enableLight(!lit.lightEnable);
+			}
+
+			if(key == GLFW_KEY_3)
+			{
+				lutActive = !lutActive;
+			}
+
+			std::string paths[3] = {"textures/hot.cube","textures/cold.cube","textures/ye.cube"};
+			for(int a = 0; a < 3; ++a)
+				if(key == GLFW_KEY_4 + a)
+					lutPath = paths[a];
 
 			if(key == GLFW_KEY_F5)
 				Shader::refresh();
@@ -1082,6 +1075,10 @@ public:
 			//static int count;
 			if(key == GLFW_KEY_TAB)
 				tab = !tab;
+
+
+		#pragma region Movement
+
 
 			if(key == 'A')
 				moveLeft = true;
@@ -1119,6 +1116,7 @@ public:
 
 			if(key == GLFW_KEY_DOWN)
 				rotDown = true;
+		#pragma endregion
 		};
 
 		keyReleased =
